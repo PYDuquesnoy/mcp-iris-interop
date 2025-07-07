@@ -232,4 +232,117 @@ export class IrisClient {
   isAuthenticated(): boolean {
     return this.authenticated;
   }
+
+  // ===== STEP 4: CLASS MANAGEMENT FUNCTIONALITY =====
+
+  /**
+   * Get list of classes in a namespace
+   */
+  async getClasses(namespace?: string, filter?: string): Promise<AtelierResponse> {
+    return this.getDocumentList(namespace, '*', 'CLS', filter);
+  }
+
+  /**
+   * Get list of packages in a namespace
+   */
+  async getPackages(namespace?: string): Promise<string[]> {
+    const classes = await this.getClasses(namespace);
+    const packages = new Set<string>();
+    
+    if (classes.result?.content) {
+      for (const cls of classes.result.content) {
+        const className = cls.name || '';
+        const lastDot = className.lastIndexOf('.');
+        if (lastDot > 0) {
+          const packageName = className.substring(0, lastDot);
+          packages.add(packageName);
+        }
+      }
+    }
+    
+    return Array.from(packages).sort();
+  }
+
+  /**
+   * Upload (save) a class to IRIS
+   */
+  async uploadClass(
+    className: string,
+    content: string[],
+    namespace?: string,
+    overwrite: boolean = true
+  ): Promise<AtelierResponse> {
+    const ns = namespace || this.config.namespace || 'USER';
+    const document = {
+      enc: false,
+      content: content
+    };
+    
+    const method = overwrite ? 'PUT' : 'POST';
+    return this.request(method, `/v1/${ns}/doc/${className}`, document);
+  }
+
+  /**
+   * Download a class from IRIS
+   */
+  async downloadClass(className: string, namespace?: string): Promise<AtelierResponse> {
+    return this.getDocument(className, namespace);
+  }
+
+  /**
+   * Download all classes in a package
+   */
+  async downloadPackage(packageName: string, namespace?: string): Promise<AtelierResponse[]> {
+    const classes = await this.getClasses(namespace, `${packageName}.*`);
+    const results: AtelierResponse[] = [];
+    
+    if (classes.result?.content) {
+      for (const cls of classes.result.content) {
+        try {
+          const classContent = await this.downloadClass(cls.name, namespace);
+          results.push(classContent);
+        } catch (error) {
+          console.warn(`Failed to download class ${cls.name}:`, error instanceof Error ? error.message : String(error));
+        }
+      }
+    }
+    
+    return results;
+  }
+
+  /**
+   * Upload and compile a class
+   */
+  async uploadAndCompileClass(
+    className: string,
+    content: string[],
+    namespace?: string,
+    flags: string = 'cuk'
+  ): Promise<{ upload: AtelierResponse; compile: AtelierResponse }> {
+    const upload = await this.uploadClass(className, content, namespace, true);
+    const compile = await this.compileDocuments([className], namespace, flags);
+    
+    return { upload, compile };
+  }
+
+  /**
+   * Delete a class from IRIS
+   */
+  async deleteClass(className: string, namespace?: string): Promise<AtelierResponse> {
+    const ns = namespace || this.config.namespace || 'USER';
+    return this.request('DELETE', `/v1/${ns}/doc/${className}`);
+  }
+
+  /**
+   * Check if a class exists
+   */
+  async classExists(className: string, namespace?: string): Promise<boolean> {
+    try {
+      const ns = namespace || this.config.namespace || 'USER';
+      const response = await this.request('HEAD', `/v1/${ns}/doc/${className}`);
+      return true;
+    } catch (error) {
+      return false;
+    }
+  }
 }

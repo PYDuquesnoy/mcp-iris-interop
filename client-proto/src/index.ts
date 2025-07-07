@@ -205,5 +205,294 @@ program
     }
   });
 
+// ===== STEP 4: CLASS MANAGEMENT COMMANDS =====
+
+program
+  .command('classes')
+  .description('List classes in a namespace')
+  .option('-n, --namespace <name>', 'Namespace name')
+  .option('-f, --filter <pattern>', 'Class name filter pattern')
+  .option('-c, --config <path>', 'Configuration file path')
+  .option('-v, --verbose', 'Verbose output')
+  .action(async (options) => {
+    const config = loadConfig(options.config);
+    const client = new IrisClient(config);
+    const namespace = options.namespace || config.namespace;
+    
+    verboseLog(`Listing classes in namespace: ${namespace}`, options.verbose);
+    if (options.filter) verboseLog(`Filter: ${options.filter}`, options.verbose);
+    
+    try {
+      const result = await client.getClasses(namespace, options.filter);
+      
+      if (result.result?.content) {
+        const classes = result.result.content;
+        console.log(`Found ${classes.length} classes in namespace '${namespace}':`);
+        
+        classes.forEach((cls: any, index: number) => {
+          console.log(`  ${index + 1}. ${cls.name}`);
+          if (options.verbose) {
+            console.log(`     Modified: ${cls.ts}, Database: ${cls.db}`);
+          }
+        });
+      }
+    } catch (error) {
+      console.error('❌ Error listing classes:', error instanceof Error ? error.message : String(error));
+      process.exit(1);
+    }
+  });
+
+program
+  .command('packages')
+  .description('List packages in a namespace')
+  .option('-n, --namespace <name>', 'Namespace name')
+  .option('-c, --config <path>', 'Configuration file path')
+  .option('-v, --verbose', 'Verbose output')
+  .action(async (options) => {
+    const config = loadConfig(options.config);
+    const client = new IrisClient(config);
+    const namespace = options.namespace || config.namespace;
+    
+    verboseLog(`Listing packages in namespace: ${namespace}`, options.verbose);
+    
+    try {
+      const packages = await client.getPackages(namespace);
+      
+      console.log(`Found ${packages.length} packages in namespace '${namespace}':`);
+      packages.forEach((pkg, index) => {
+        console.log(`  ${index + 1}. ${pkg}`);
+      });
+    } catch (error) {
+      console.error('❌ Error listing packages:', error instanceof Error ? error.message : String(error));
+      process.exit(1);
+    }
+  });
+
+program
+  .command('upload')
+  .description('Upload a class file to IRIS')
+  .argument('<className>', 'Class name (e.g., Test.Sample.cls)')
+  .argument('<filePath>', 'Path to the class file')
+  .option('-n, --namespace <name>', 'Namespace name')
+  .option('--no-overwrite', 'Prevent overwriting existing class')
+  .option('-c, --config <path>', 'Configuration file path')
+  .option('-v, --verbose', 'Verbose output')
+  .action(async (className, filePath, options) => {
+    const config = loadConfig(options.config);
+    const client = new IrisClient(config);
+    const namespace = options.namespace || config.namespace;
+    
+    verboseLog(`Uploading class: ${className} from ${filePath}`, options.verbose);
+    
+    try {
+      if (!fs.existsSync(filePath)) {
+        console.error(`❌ File not found: ${filePath}`);
+        process.exit(1);
+      }
+      
+      const content = fs.readFileSync(filePath, 'utf8').split('\n');
+      const result = await client.uploadClass(className, content, namespace, options.overwrite);
+      
+      if (result.status?.errors?.length > 0) {
+        console.error('❌ Upload failed with errors:');
+        result.status.errors.forEach(error => console.error(`  - ${error}`));
+        process.exit(1);
+      } else {
+        console.log(`✅ Successfully uploaded class '${className}' to namespace '${namespace}'`);
+        if (options.verbose) {
+          console.log(`Status: ${result.status?.summary || 'OK'}`);
+        }
+      }
+    } catch (error) {
+      console.error('❌ Error uploading class:', error instanceof Error ? error.message : String(error));
+      process.exit(1);
+    }
+  });
+
+program
+  .command('download')
+  .description('Download a class from IRIS')
+  .argument('<className>', 'Class name to download')
+  .option('-n, --namespace <name>', 'Namespace name')
+  .option('-o, --output <filePath>', 'Output file path (optional)')
+  .option('-c, --config <path>', 'Configuration file path')
+  .option('-v, --verbose', 'Verbose output')
+  .action(async (className, options) => {
+    const config = loadConfig(options.config);
+    const client = new IrisClient(config);
+    const namespace = options.namespace || config.namespace;
+    
+    verboseLog(`Downloading class: ${className}`, options.verbose);
+    
+    try {
+      const result = await client.downloadClass(className, namespace);
+      
+      if (result.result?.content) {
+        const content = result.result.content.join('\n');
+        
+        if (options.output) {
+          fs.writeFileSync(options.output, content);
+          console.log(`✅ Class '${className}' downloaded to ${options.output}`);
+        } else {
+          console.log(`Class '${className}' content:`);
+          console.log(content);
+        }
+        
+        if (options.verbose) {
+          console.log(`\\nClass info:`);
+          console.log(`  Name: ${result.result.name}`);
+          console.log(`  Category: ${result.result.cat}`);
+          console.log(`  Modified: ${result.result.ts}`);
+          console.log(`  Database: ${result.result.db}`);
+        }
+      }
+    } catch (error) {
+      console.error('❌ Error downloading class:', error instanceof Error ? error.message : String(error));
+      process.exit(1);
+    }
+  });
+
+program
+  .command('download-package')
+  .description('Download all classes in a package')
+  .argument('<packageName>', 'Package name to download')
+  .option('-n, --namespace <name>', 'Namespace name')
+  .option('-d, --dir <directory>', 'Output directory (default: ./package_name)')
+  .option('-c, --config <path>', 'Configuration file path')
+  .option('-v, --verbose', 'Verbose output')
+  .action(async (packageName, options) => {
+    const config = loadConfig(options.config);
+    const client = new IrisClient(config);
+    const namespace = options.namespace || config.namespace;
+    const outputDir = options.dir || `./${packageName}`;
+    
+    verboseLog(`Downloading package: ${packageName}`, options.verbose);
+    
+    try {
+      // Create output directory
+      if (!fs.existsSync(outputDir)) {
+        fs.mkdirSync(outputDir, { recursive: true });
+      }
+      
+      const results = await client.downloadPackage(packageName, namespace);
+      
+      console.log(`Found ${results.length} classes in package '${packageName}':`);
+      
+      for (const result of results) {
+        if (result.result?.content && result.result?.name) {
+          const fileName = `${result.result.name}`;
+          const filePath = path.join(outputDir, fileName);
+          const content = result.result.content.join('\n');
+          
+          fs.writeFileSync(filePath, content);
+          console.log(`  ✅ Downloaded: ${fileName}`);
+          
+          if (options.verbose) {
+            console.log(`     Modified: ${result.result.ts}, Database: ${result.result.db}`);
+          }
+        }
+      }
+      
+      console.log(`\\n✅ Package '${packageName}' downloaded to directory: ${outputDir}`);
+    } catch (error) {
+      console.error('❌ Error downloading package:', error instanceof Error ? error.message : String(error));
+      process.exit(1);
+    }
+  });
+
+program
+  .command('compile')
+  .description('Compile a class or multiple classes')
+  .argument('<classNames...>', 'Class names to compile')
+  .option('-n, --namespace <name>', 'Namespace name')
+  .option('-f, --flags <flags>', 'Compilation flags', 'cuk')
+  .option('-c, --config <path>', 'Configuration file path')
+  .option('-v, --verbose', 'Verbose output')
+  .action(async (classNames, options) => {
+    const config = loadConfig(options.config);
+    const client = new IrisClient(config);
+    const namespace = options.namespace || config.namespace;
+    
+    verboseLog(`Compiling classes: ${classNames.join(', ')}`, options.verbose);
+    verboseLog(`Flags: ${options.flags}`, options.verbose);
+    
+    try {
+      const result = await client.compileDocuments(classNames, namespace, options.flags);
+      
+      if (result.status?.errors?.length > 0) {
+        console.error('❌ Compilation failed with errors:');
+        result.status.errors.forEach(error => console.error(`  - ${error}`));
+        process.exit(1);
+      } else {
+        console.log(`✅ Successfully compiled ${classNames.length} class(es)`);
+        
+        if (result.console?.length > 0) {
+          console.log('\\nCompilation output:');
+          result.console.forEach(line => console.log(`  ${line}`));
+        }
+        
+        if (options.verbose && result.result?.content) {
+          console.log(`\\nCompiled documents: ${result.result.content.length}`);
+        }
+      }
+    } catch (error) {
+      console.error('❌ Error compiling classes:', error instanceof Error ? error.message : String(error));
+      process.exit(1);
+    }
+  });
+
+program
+  .command('upload-compile')
+  .description('Upload and compile a class file')
+  .argument('<className>', 'Class name (e.g., Test.Sample.cls)')
+  .argument('<filePath>', 'Path to the class file')
+  .option('-n, --namespace <name>', 'Namespace name')
+  .option('-f, --flags <flags>', 'Compilation flags', 'cuk')
+  .option('-c, --config <path>', 'Configuration file path')
+  .option('-v, --verbose', 'Verbose output')
+  .action(async (className, filePath, options) => {
+    const config = loadConfig(options.config);
+    const client = new IrisClient(config);
+    const namespace = options.namespace || config.namespace;
+    
+    verboseLog(`Uploading and compiling class: ${className}`, options.verbose);
+    
+    try {
+      if (!fs.existsSync(filePath)) {
+        console.error(`❌ File not found: ${filePath}`);
+        process.exit(1);
+      }
+      
+      const content = fs.readFileSync(filePath, 'utf8').split('\n');
+      const results = await client.uploadAndCompileClass(className, content, namespace, options.flags);
+      
+      // Check upload result
+      if (results.upload.status?.errors?.length > 0) {
+        console.error('❌ Upload failed with errors:');
+        results.upload.status.errors.forEach(error => console.error(`  - ${error}`));
+        process.exit(1);
+      }
+      
+      console.log(`✅ Successfully uploaded class '${className}'`);
+      
+      // Check compilation result
+      if (results.compile.status?.errors?.length > 0) {
+        console.error('❌ Compilation failed with errors:');
+        results.compile.status.errors.forEach(error => console.error(`  - ${error}`));
+        process.exit(1);
+      }
+      
+      console.log(`✅ Successfully compiled class '${className}'`);
+      
+      if (results.compile.console?.length > 0) {
+        console.log('\\nCompilation output:');
+        results.compile.console.forEach(line => console.log(`  ${line}`));
+      }
+    } catch (error) {
+      console.error('❌ Error uploading and compiling class:', error instanceof Error ? error.message : String(error));
+      process.exit(1);
+    }
+  });
+
 // Parse command line arguments
 program.parse();
