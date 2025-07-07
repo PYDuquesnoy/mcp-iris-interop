@@ -186,7 +186,8 @@ export class IrisClient {
    */
   async getDocument(documentName: string, namespace?: string): Promise<AtelierResponse> {
     const ns = namespace || this.config.namespace || 'USER';
-    return this.request('GET', `/v1/${ns}/doc/${documentName}`);
+    const encodedDocName = encodeURIComponent(documentName);
+    return this.request('GET', `/v1/${ns}/doc/${encodedDocName}`);
   }
 
   /**
@@ -279,7 +280,8 @@ export class IrisClient {
     };
     
     const method = overwrite ? 'PUT' : 'POST';
-    return this.request(method, `/v1/${ns}/doc/${className}`, document);
+    const encodedClassName = encodeURIComponent(className);
+    return this.request(method, `/v1/${ns}/doc/${encodedClassName}`, document);
   }
 
   /**
@@ -330,7 +332,8 @@ export class IrisClient {
    */
   async deleteClass(className: string, namespace?: string): Promise<AtelierResponse> {
     const ns = namespace || this.config.namespace || 'USER';
-    return this.request('DELETE', `/v1/${ns}/doc/${className}`);
+    const encodedClassName = encodeURIComponent(className);
+    return this.request('DELETE', `/v1/${ns}/doc/${encodedClassName}`);
   }
 
   /**
@@ -339,7 +342,8 @@ export class IrisClient {
   async classExists(className: string, namespace?: string): Promise<boolean> {
     try {
       const ns = namespace || this.config.namespace || 'USER';
-      const response = await this.request('HEAD', `/v1/${ns}/doc/${className}`);
+      const encodedClassName = encodeURIComponent(className);
+      const response = await this.request('HEAD', `/v1/${ns}/doc/${encodedClassName}`);
       return true;
     } catch (error) {
       return false;
