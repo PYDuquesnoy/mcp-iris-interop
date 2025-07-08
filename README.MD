@@ -46,8 +46,13 @@ mcp-iris-interop/
 ├── Dev-Status.MD          # Step completion status
 ├── client-proto/          # TypeScript prototype (Step 3)
 ├── curl-test/             # IRIS API validation scripts (Step 3)
+├── exec-proto/            # ObjectScript execution prototype (Side Project)
+├── iris-samples/          # Sample IRIS classes for upload/download testing
+│   ├── upload/           # Classes ready for upload to IRIS
+│   └── download/         # Downloaded classes from IRIS
 ├── intersystems-iris-dev-template/  # IRIS development environment
 ├── vscode-objectscript/   # VSCode plugin source code
+├── obsolete-server-classes/  # Non-functional classes from incomplete steps
 └── InterSystems-VSCode-API-Inventory.md  # API documentation
 ```
 
@@ -130,5 +135,18 @@ npm start server-info       # Get server information
 npm start namespaces        # List namespaces
 npm start docs [namespace]  # List documents
 ```
+
+### Sample Classes (iris-samples/)
+
+The `iris-samples/` directory contains ObjectScript classes for testing upload/download functionality:
+
+- **`upload/`**: Sample classes ready for upload to IRIS
+  - `Test.Sample.cls` - Basic ObjectScript class with properties and methods
+  - `Test.REST.cls` - REST API class extending %CSP.REST  
+  - `Test.Utility.cls` - Utility class with static methods
+
+- **`download/`**: Downloaded classes from IRIS for verification
+
+These samples are used by the TypeScript prototype and can be referenced by curl-test scripts for consistent testing.
 
 Next: Extending prototype with class management functionality (Step 4).

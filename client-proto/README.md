@@ -123,6 +123,15 @@ The test suite includes:
 6. Document content retrieval
 7. SQL query execution
 
+## Sample Classes
+
+Sample ObjectScript classes for testing are available in `../iris-samples/`:
+- `upload/Test.Sample.cls` - Basic ObjectScript class
+- `upload/Test.REST.cls` - REST API class
+- `upload/Test.Utility.cls` - Utility class
+
+These can be used with the upload/download functionality.
+
 ## API Methods
 
 ### IrisClient Class

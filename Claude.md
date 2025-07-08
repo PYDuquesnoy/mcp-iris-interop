@@ -77,6 +77,8 @@ Extend the Prototype with following functionality, which may require to a new RE
 * The Implementation is in the IRISAPP Namespace in the class Api.Mcp.Interop.cls which inherits %CSP.REST
 * The Deployment of the WebApp needs to be done via an SQL Stored Procedure that needs to be created and executed. you can use %SYS.REST.DeployApplication to deploy the Web Application. Security must be user/password authentication which is value 32.
 * The Function implemented is list, which lists all Productions in a namespace. it can use GetProductionSummary from the Class Ens.Director.
+* Develop the new functions needed in client-proto, and in curl-test.
+* You may create an Intertoperability production class (make a clen directory for the )
 
 Document and commit and push to git.
 
