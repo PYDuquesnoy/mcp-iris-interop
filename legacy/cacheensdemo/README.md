@@ -17,7 +17,7 @@ ENSDEMO (Ensemble Demo) namespace contains comprehensive examples and demonstrat
 - **Total Classes Available**: 5,104 classes
 - **Download Method**: TypeScript client with proper URL encoding for % classes
 - **Download Date**: 2025-07-08
-- **Status**: Download in progress (637+ classes downloaded so far, 8.4MB+)
+- **Status**: Download completed. All 637 % classes were removed to avoid duplicates with system/ directory
 
 ## Expected Contents
 
@@ -70,12 +70,10 @@ These classes serve as:
 
 ## System Classes
 
-The download includes both:
-- **Application Classes** - ENSDEMO-specific demonstration code
-- **System Classes** - InterSystems framework classes (those starting with %)
+The ENSDEMO namespace contained 637 % system classes which were downloaded but subsequently removed to avoid duplicates. All system classes are available in the `../system/` directory which contains the complete collection of % classes from the SAMPLES namespace.
 
 ## Notes
 
-This is a comprehensive collection representing the full ENSDEMO namespace, which is one of the largest sample namespaces in InterSystems IRIS, containing extensive interoperability and integration examples.
+The ENSDEMO namespace is one of the largest sample namespaces in InterSystems IRIS, containing extensive interoperability and integration examples. While % system classes were removed from this directory to avoid duplicates, they remain available in the centralized system/ directory.
 
-The download is optimized using the TypeScript client which properly handles URL encoding for system classes containing the % character.
+The download used the TypeScript client which properly handles URL encoding for system classes containing the % character.
