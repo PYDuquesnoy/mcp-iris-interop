@@ -1,0 +1,9 @@
+{
+  "server": "localhost",
+  "port": 42002,
+  "pathPrefix": "",
+  "username": "_SYSTEM",
+  "password": "SYS",
+  "https": false,
+  "namespace": "IRISAPP"
+}
