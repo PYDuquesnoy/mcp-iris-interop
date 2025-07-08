@@ -42,21 +42,40 @@ This project uses InterSystems IRIS with Docker containers for development. Foll
 
 ```
 mcp-iris-interop/
-├── README.MD              # This file
-├── CLAUDE.md              # Project instructions
-├── WorkLog.MD             # Development log
-├── Dev-Status.MD          # Step completion status
-├── client-proto/          # TypeScript prototype (Step 3-4)
-├── curl-test/             # IRIS API validation scripts (Step 3-4)
-├── exec-proto/            # ObjectScript execution prototype (Side Project Step 1)
-├── iris-samples/          # Sample IRIS classes for upload/download testing
-│   ├── upload/           # Classes ready for upload to IRIS
-│   └── download/         # Downloaded classes from IRIS
+├── README.MD              # This file - main project documentation
+├── CLAUDE.md              # Project instructions and step definitions
+├── WorkLog.MD             # Development log and progress tracking
+├── Dev-Status.MD          # Step completion status and details
+├── client-proto/          # TypeScript prototype (Steps 3-4)
+│   ├── README.md          # Client prototype documentation
+│   └── IRIS-Interoperability-API-Analysis.md  # Interoperability API analysis
+├── curl-test/             # IRIS API validation scripts (Steps 3-4)
+│   ├── README.md          # cURL test suite documentation
+│   └── TEST-RESULTS.md    # Test execution results
+├── exec-proto/            # ObjectScript execution prototype (Side Project)
+│   ├── README.md          # Execution prototype documentation
+│   └── DEPLOYMENT-NOTES.md # Critical deployment patterns and procedures
+├── iris-samples/          # Sample IRIS classes for testing
+│   └── README.md          # Sample classes documentation
 ├── legacy/                # Downloaded sample classes from IRIS
+│   ├── README.md          # Legacy classes overview
+│   ├── cacheensdemo/      # ENSDEMO namespace classes (203 interoperability samples)
+│   │   └── README.md      # ENSDEMO classes documentation
+│   └── system/            # % system classes from SAMPLES namespace (3,458 classes)
 ├── intersystems-iris-dev-template/  # Docker development environment (Step 2)
-└── vscode-objectscript/   # VSCode plugin source code
-├── obsolete-server-classes/  # Non-functional classes from incomplete steps
-└── InterSystems-VSCode-API-Inventory.md  # API documentation
+│   ├── README.md          # Docker environment setup
+│   └── dev.md             # Development instructions
+├── vscode-objectscript/   # VSCode plugin source code (Step 3)
+│   ├── README.md          # VSCode plugin documentation
+│   └── CHANGELOG.md       # Plugin change history
+└── Documentation Files:
+    ├── InterSystems-VSCode-API-Inventory.md  # Complete API analysis (70+ endpoints)
+    ├── Claude-SideProject.md                 # Side project specifications
+    ├── Exec-Proto-Bootstrap-Success.md       # Bootstrap implementation success
+    ├── Side-Project-Step2-Complete.md        # REST API deployment completion
+    ├── Side-Project-Step2-Plan.md           # REST API deployment plan
+    ├── SQL-StoredProcedure-Analysis.md      # SQL stored procedure analysis
+    └── StoredProcedure-Examples.md          # Stored procedure examples
 ```
 
 ### Side Project: exec-proto
@@ -167,4 +186,61 @@ The `iris-samples/` directory contains ObjectScript classes for testing upload/d
 
 These samples are used by the TypeScript prototype and can be referenced by curl-test scripts for consistent testing.
 
-Next: Extending prototype with class management functionality (Step 4).
+## Documentation Index
+
+### Project Management
+- **[CLAUDE.md](CLAUDE.md)** - Complete project instructions and step definitions
+- **[Dev-Status.MD](Dev-Status.MD)** - Detailed step completion status and progress tracking
+- **[WorkLog.MD](WorkLog.MD)** - Development log with interaction history
+
+### Technical Documentation
+- **[InterSystems-VSCode-API-Inventory.md](InterSystems-VSCode-API-Inventory.md)** - Comprehensive analysis of 70+ IRIS Atelier REST API endpoints
+- **[exec-proto/DEPLOYMENT-NOTES.md](exec-proto/DEPLOYMENT-NOTES.md)** - ⭐ **CRITICAL**: Deployment patterns for REST APIs via stored procedures
+- **[SQL-StoredProcedure-Analysis.md](SQL-StoredProcedure-Analysis.md)** - Analysis of SQL stored procedure capabilities in IRIS
+- **[StoredProcedure-Examples.md](StoredProcedure-Examples.md)** - Working examples of stored procedure implementations
+
+### Side Project Documentation
+- **[Claude-SideProject.md](Claude-SideProject.md)** - Side project specifications and requirements
+- **[Exec-Proto-Bootstrap-Success.md](Exec-Proto-Bootstrap-Success.md)** - Bootstrap implementation success report
+- **[Side-Project-Step2-Complete.md](Side-Project-Step2-Complete.md)** - REST API deployment completion report
+- **[Side-Project-Step2-Plan.md](Side-Project-Step2-Plan.md)** - REST API deployment implementation plan
+
+### Component Documentation
+- **[client-proto/README.md](client-proto/README.md)** - TypeScript IRIS API client documentation
+- **[client-proto/IRIS-Interoperability-API-Analysis.md](client-proto/IRIS-Interoperability-API-Analysis.md)** - Interoperability-specific API analysis
+- **[curl-test/README.md](curl-test/README.md)** - cURL test suite documentation and usage
+- **[curl-test/TEST-RESULTS.md](curl-test/TEST-RESULTS.md)** - Test execution results and validation
+- **[exec-proto/README.md](exec-proto/README.md)** - ObjectScript execution prototype documentation
+- **[iris-samples/README.md](iris-samples/README.md)** - Sample classes documentation and testing guide
+
+### Sample Collections
+- **[legacy/README.md](legacy/README.md)** - Overview of downloaded IRIS sample classes
+- **[legacy/cacheensdemo/README.md](legacy/cacheensdemo/README.md)** - ENSDEMO interoperability samples (203 classes)
+
+### External Components
+- **[intersystems-iris-dev-template/README.md](intersystems-iris-dev-template/README.md)** - Docker development environment setup
+- **[vscode-objectscript/README.md](vscode-objectscript/README.md)** - VSCode plugin documentation
+
+## Sample Collections Summary
+
+This repository includes comprehensive sample class collections from InterSystems IRIS:
+
+- **SAMPLES Namespace**: 406 non-% classes (3.0MB) + 3,458 % system classes (47MB)
+- **ENSDEMO Namespace**: 203 non-% interoperability classes (1.2MB)
+- **Custom Samples**: Upload/download test classes in `iris-samples/`
+
+These collections provide extensive examples for:
+- InterSystems IRIS interoperability development
+- Business Services, Processes, and Operations
+- Data transformations and message routing
+- Web services and REST API implementations
+- Dashboard and UI components (CSPX.Dashboard.*)
+
+## Key Achievements
+
+✅ **Functional REST API Deployment**: Complete workflow from SQL queries to deployed REST APIs  
+✅ **Comprehensive API Analysis**: 70+ IRIS Atelier API endpoints documented  
+✅ **Working Prototypes**: TypeScript client and ObjectScript execution systems  
+✅ **Extensive Test Coverage**: cURL and TypeScript test suites for validation  
+✅ **Sample Code Library**: 4,000+ InterSystems IRIS classes for reference  
+✅ **Critical Documentation**: Deployment patterns preserved for future use

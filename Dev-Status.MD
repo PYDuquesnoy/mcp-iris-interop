@@ -71,6 +71,8 @@
   - ✅ Implemented /list endpoint using Ens.Director.GetProductionSummary()
   - ✅ Added /status and /test endpoints with JSON responses
   - ✅ Created comprehensive test suite and validation scripts
+  - ✅ Fixed actual web application deployment via Security.Applications.Create()
+  - ✅ Created DEPLOYMENT-NOTES.md for future reference
   - ✅ Demonstrated complete SQL → Stored Procedure → REST API workflow
   - ✅ Integrated with Step 1 exec-proto foundation
   - ✅ All Claude-SideProject.md requirements fulfilled
@@ -93,9 +95,24 @@
 ### ⏳ Step 10: ICUMED Circuit Implementation
 - **Status**: Pending
 
+## Additional Activities
+
+### ✅ IRIS Sample Class Collections
+- **Status**: Completed
+- **Date**: 2025-07-08
+- **Details**:
+  - ✅ Downloaded 406 non-% classes from SAMPLES namespace (3.0MB)
+  - ✅ Downloaded 3,458 % system classes from SAMPLES namespace (47MB)
+  - ✅ Downloaded 203 non-% classes from ENSDEMO namespace (1.2MB)
+  - ✅ Organized % classes in `legacy/system/` directory to avoid duplicates
+  - ✅ Created comprehensive download scripts with filtering capabilities
+  - ✅ Generated README.md files documenting class collections and purposes
+  - ✅ Established repository of InterSystems IRIS interoperability samples
+
 ## Notes
 
 - Project started on 2025-07-07
 - Following project instructions from CLAUDE.md
 - Git commits and pushes will be done for each completed step
 - Using fixed ports in 42000 range for Docker containers
+- Comprehensive sample class library available for reference and testing
