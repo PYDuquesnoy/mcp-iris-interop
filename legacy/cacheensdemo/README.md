@@ -14,10 +14,11 @@ ENSDEMO (Ensemble Demo) namespace contains comprehensive examples and demonstrat
 ## Download Status
 
 - **Source Namespace**: ENSDEMO
-- **Total Classes Available**: 5,104 classes
-- **Download Method**: TypeScript client with proper URL encoding for % classes
+- **Total Classes Available**: 5,104 classes (1,646 non-% classes)
+- **Downloaded Classes**: 203 non-% classes (partial download)
+- **Download Method**: TypeScript client with filtering for non-% classes only
 - **Download Date**: 2025-07-08
-- **Status**: Download completed. All 637 % classes were removed to avoid duplicates with system/ directory
+- **Status**: Partial download in progress - % classes filtered out to avoid duplicates with system/ directory
 
 ## Expected Contents
 
