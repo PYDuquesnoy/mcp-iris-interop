@@ -78,16 +78,14 @@ Extend the Prototype with following functionality, which may require to a new RE
 * The Deployment of the WebApp needs to be done via an SQL Stored Procedure that needs to be created and executed. you can use %SYS.REST.DeployApplication to deploy the Web Application. Security must be user/password authentication which is value 32.
 * The Function implemented is list, which lists all Productions in a namespace. it can use GetProductionSummary from the Class Ens.Director.
 
-
+Document and commit and push to git.
 
 ## Step 6
 
 
 * List the Productions defined in a Namespace
+* execute a method and return the results
 
-
-
-execute a method and return the results
 * Update the Current Production
 * Start a Specific Production, or the Default current one
 * Stop a the default current Production
@@ -108,16 +106,16 @@ Determine, in the above list, which methods already exist, and which require a n
 * generate a test set for these functions
 * test the functions
 
-
+Document and commit and push to git.
 
 ## Step 7
 
-* Make an mcp Server from the prototype
+* In a different directory, Make an mcp Server based on the functiontality from the prototype
   * make sure the IRIS server connection details can be configured on a per project basis
 * Install the mcp server in this session
 * Test the mcp server functionality and validate each function
 
-
+Document and commit and push to git.
 
 ## Step 8
 

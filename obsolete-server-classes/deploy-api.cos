@@ -1,0 +1,27 @@
+/// Deploy MCP-IRIS-Interop REST API
+/// This ObjectScript code deploys the REST web application
+
+// Create the REST application configuration
+Set restApp = ##class(%DynamicObject).%New()
+Do restApp.%Set("name", "Api.Mcp.Interop")
+Do restApp.%Set("dispatchClass", "Api.Mcp.Interop")
+
+// Create the web application configuration  
+Set webApp = ##class(%DynamicObject).%New()
+Do webApp.%Set("name", "/api/mcp-interop")
+Do webApp.%Set("description", "MCP-IRIS-Interop REST API")
+Do webApp.%Set("namespace", "IRISAPP")
+Do webApp.%Set("authEnabled", 32)
+Do webApp.%Set("unauthenticatedEnabled", 0)
+
+// Deploy using %SYS.REST
+Set status = ##class(%SYS.REST).DeployApplication(restApp, webApp, 32)
+
+If $$$ISOK(status) {
+    Write "✅ REST API deployed successfully!", !
+    Write "URL: http://localhost:42002/api/mcp-interop/", !
+} Else {
+    Write "❌ Deployment failed: ", $SYSTEM.Status.GetErrorText(status), !
+}
+
+Quit status

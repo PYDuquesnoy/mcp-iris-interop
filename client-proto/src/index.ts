@@ -494,5 +494,68 @@ program
     }
   });
 
+program
+  .command('query')
+  .description('Execute an SQL query')
+  .argument('<sql>', 'SQL query to execute')
+  .option('-n, --namespace <name>', 'Namespace name')
+  .option('-p, --parameters <params...>', 'Query parameters')
+  .option('-c, --config <path>', 'Configuration file path')
+  .option('-v, --verbose', 'Verbose output')
+  .action(async (sql, options) => {
+    const config = loadConfig(options.config);
+    const client = new IrisClient(config);
+    const namespace = options.namespace || config.namespace;
+    const parameters = options.parameters || [];
+    
+    verboseLog(`Executing SQL query in namespace: ${namespace}`, options.verbose);
+    verboseLog(`Query: ${sql}`, options.verbose);
+    if (parameters.length > 0) verboseLog(`Parameters: ${parameters.join(', ')}`, options.verbose);
+    
+    try {
+      const result = await client.executeQuery(sql, parameters, namespace);
+      
+      if (result.status?.errors?.length > 0) {
+        console.error('❌ Query execution failed with errors:');
+        result.status.errors.forEach(error => console.error(`  - ${error}`));
+        process.exit(1);
+      } else {
+        console.log('✅ Query executed successfully');
+        
+        if (result.result?.content) {
+          const content = result.result.content;
+          if (Array.isArray(content) && content.length > 0) {
+            console.log(`\nResults (${content.length} rows):`);
+            
+            // Display first few rows in a readable format
+            const displayRows = Math.min(content.length, 10);
+            for (let i = 0; i < displayRows; i++) {
+              const row = content[i];
+              if (typeof row === 'object') {
+                console.log(`  Row ${i + 1}: ${JSON.stringify(row)}`);
+              } else {
+                console.log(`  Row ${i + 1}: ${row}`);
+              }
+            }
+            
+            if (content.length > 10) {
+              console.log(`  ... and ${content.length - 10} more rows`);
+            }
+          } else {
+            console.log('\nQuery executed with no results.');
+          }
+        }
+        
+        if (options.verbose) {
+          console.log('\nFull response:');
+          console.log(JSON.stringify(result, null, 2));
+        }
+      }
+    } catch (error) {
+      console.error('❌ Error executing query:', error instanceof Error ? error.message : String(error));
+      process.exit(1);
+    }
+  });
+
 // Parse command line arguments
 program.parse();
