@@ -1,0 +1,153 @@
+/* Copyright (c) 2025 by InterSystems Corporation.
+   Cambridge, Massachusetts, U.S.A.  All rights reserved.
+   Confidential property of InterSystems Corporation. */
+
+Include (%sySystem, %PVA)
+
+/// Iterator over elements in a %DynamicArray
+Class %Iterator.Array Extends %Iterator.AbstractIterator [ System = 3 ]
+{
+
+Method %OnNew(oref As %Library.DynamicAbstractObject) As %Status [ Internal, Private, ProcedureBlock = 1, ServerOnly = 1 ]
+{
+	set i%pointer = -1
+	set ..pvaoref = oref
+	return $$$OK
+}
+
+/// %GetNext() advances the iterator and returns true if the iterator is
+/// positioned on a valid 
+/// element, and returns false if it is beyond the last element.
+/// <p>
+/// Adding or removing an element of the %DynamicArray object
+/// will cause further calls on the %GetNext(.key,.value,.type) method to have
+/// undefined behavior.
+/// <p>
+/// The first argument is an output argument .<b><var>key</var></b>
+/// which contains the key index number for the element that is returned.
+/// <p>
+/// The second argument is an output argument .<b><var>value</var></b>
+/// which contains the value for the returned element which is usually
+/// converted to ObjectScript.
+/// <p>
+/// The optional third output argument .<b><var>type</var></b>,
+/// when it is present, will be modified to contain the 
+/// %GetTypeOf(</b><var>key</var></b>) string representing the original
+/// type of the returned %DynamicArray element.  
+/// When this third argument
+/// variable is present it changes some of the conversion rules for converting
+/// a %DynamicArray element into an ObjectScript value.
+/// <p>
+/// If the optional third argument is not present then a &lt;MAXNUMBER&gt;
+/// error signal may occur if the element value is a JSON number that
+/// is too large to be converted to an ObjectScript computational
+/// canonical number.
+/// <p>
+/// If the optional third argument is not present then
+/// a &lt;MAXSTRING&gt; error signal may occur if the element value is a
+/// JSON string that when converted to ObjectScript string format
+/// exceeds the length limit for ObjectScript strings.
+/// <p>
+/// If the optional third argument is not present on a non-Unicode IRIS
+/// instance, then a &lt;WIDE CHAR&gt; error signal may occur
+/// if the key name string in .<b><var>key</var></b> or the
+/// %DynamicObject element value in .<b><var>value</var></b> are JSON strings
+/// containing a UTF-16 character with a value larger than $CHAR(255).
+/// <p>
+/// If the optional third argument, .<b><var>type</var></b>, is present
+/// then these conversion errors will be avoided.
+/// <p>
+/// If the third parameter variable, .<b><var>type</var></b>, is present
+/// then an element
+/// which was originally a JSON format number will always be returned as
+/// an ObjectScript string containing the JSON format number.  If the element
+/// was originally an ObjectScript number then the returned value will be an
+/// ObjectScript canonical computational number.  In either case, the
+/// third .<b><var>type</var></b> argument will contain "number".  If the
+/// third parameter variable, .<b><var>type</var></b>, is not present then
+/// the JSON format number will be converted to an ObjectScript computational
+/// number before assignment to the .<b><var>value</var></b> argument variable.
+/// <p>
+/// If the .<b><var>value</var></b> element in the %DynamicArray was originally
+/// an ObjectScript oref then the .<b><var>type</var></b> argument will
+/// contain "oref".  If the element was originally a long JSON
+/// string that would exceed the supported length for an ObjectScript string then
+/// the .<b><var>value</var></b> argument will contain the oref for a
+/// readonly ObjectScript <b><class>%Stream.DynamicCharacter</class></b> or
+/// <b><class>%Stream.DynamicBinary</class></b> class object
+/// containing the string characters but the <b><var>type</var></b>
+/// argument will still contain "string" and not "oref".  This conversion from
+/// a string to %Stream does not occur if the third .<b><var>type</var></b> argument
+/// is not present.
+/// <p>
+/// On a non-Unicode instance, if a element in the %DynamicArray
+/// was originally a normal length JSON string containing
+/// UTF-16 characters larger than $CHAR(255), then
+/// the .<b><var>value</var></b> will be converted to
+/// an ObjectScript string containing a JSON format string including a
+/// leading " mark, a trailing " mark, and where required, the string will
+/// include JSON format character escapes. Also the <b><var>type</var></b>
+/// argument will contain "json" instead of containing "string".  This
+/// conversion to JSON format does not occur if the
+/// third .<b><var>type</var></b> argument is not present.
+/// <p>
+/// The .<b><var>type</var></b> argument
+/// allows you to deterimine whether a %Stream oref returned in
+/// the .<b><var>value</var></b>
+/// argument was originally an ObjectScript oref or a long JSON string
+/// converted to a %Stream object.
+/// <p>
+/// The .<b><var>type</var></b> can also allow you to determine whether
+/// a .<b><var>value</var></b> containing the ObjectScript empty string, "",
+/// was originally
+/// type "string" or type "null" or whether a .<b><var>value</var></b>
+/// containing 0 or 1 was originally type "number" or type "boolean".
+/// <p>
+/// On a non-Unicode instance, if the element in the %DynamicArray
+/// was originally a normal length JSON string containing
+/// UTF-16 characters that could not be converted to an 8-bit ObjectScript string
+/// then the .<b><var>value</var></b> argument will contain an ObjectScript string
+/// containing a JSON format string constant and the .<b><var>type</var></b>
+/// argument will be "json" instead of "string" to specify the formatting type of
+/// the .<b><var>value</var></b> string.
+/// <p>
+/// To call %GetNext(.key,.value,.type) method, pass the .<b><var>key</var></b> and 
+/// .<b><var>value</var></b> arguments, and optionally the .<b><var>type</var></b>
+/// argument, by reference to receive their return values.
+/// To iterate over a <class>%DynamicArray</class> use the
+/// following pattern:  <EXAMPLE>
+///     while iterator.%GetNext(.key,.value,.type) {
+///         // key contains the element key index
+///         // and value contains the value
+///         // and type contains a %GetTypeOf string
+///     }
+/// </EXAMPLE>
+/// 
+Method %GetNext(Output key, Output value, Output type...) As %Boolean
+{
+    set pointer = ..pointer
+    if $get(type,0)>0 {
+        set value = $zu(210, $$$PVSGetNext2, ..pvaoref, .pointer, .key, .VType)
+	set type(1) = $$$JSONConvertType(VType)
+	if '$$$USEUNICODE, VType = $$$PVVALUEUTF16, '$IsObject(value) {
+	    set type(1) = "json" 
+	}
+	if (pointer < 0) return 0
+	set ..pointer = pointer
+	if $IsObject(value) {
+	    if VType=$$$PVVALUEUTF16 {
+		set value = ##class(%Stream.DynamicCharacter).%New(value)
+	    } elseif VType=$$$PVVALUEBYTE {
+		set value = ##class(%Stream.DynamicBinary).%New(value)
+	    }
+	}
+	return 1
+    } else {
+	set ans = $zu(210, 22, ..pvaoref, .pointer, .value)
+	set ..pointer = pointer
+	set key = pointer
+	return ans
+    }
+}
+
+}

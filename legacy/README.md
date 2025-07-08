@@ -4,9 +4,9 @@ This directory contains ObjectScript classes downloaded from multiple namespaces
 
 ## Directory Structure
 
-- `cachesamples/` - Contains 1,101 ObjectScript class files from the SAMPLES namespace (3.0MB total)
-- `cachesamples-system/` - Contains % system classes from SAMPLES namespace (download in progress)
-- `cacheensdemo/` - Contains 5,104+ ObjectScript classes from the ENSDEMO namespace (8.4MB+ total, download in progress)
+- `cachesamples/` - Contains 406 non-% ObjectScript class files from the SAMPLES namespace (3.0MB total)
+- `system/` - Contains 3,458 % system classes from SAMPLES namespace (47MB total) 
+- `cacheensdemo/` - Contains only README.md (all % classes removed to avoid duplicates with system/ directory)
 
 ## Contents
 
@@ -88,21 +88,22 @@ These classes serve as:
 ### SAMPLES Namespace
 - **Source**: SAMPLES namespace from InterSystems IRIS instance
 - **Download Date**: 2025-07-08
-- **Files**: 1,101 classes (non-% classes)
+- **Files**: 406 classes (non-% classes only)
 - **Size**: 3.0MB
 - **Method**: Custom script filtering out % system classes
 
 ### SAMPLES System Classes
 - **Source**: SAMPLES namespace % system classes
 - **Download Date**: 2025-07-08
-- **Files**: 3,458+ classes (% classes, download in progress)
+- **Files**: 3,458 classes (% classes, download completed)
+- **Size**: 47MB
 - **Method**: TypeScript client with proper URL encoding
 
 ### ENSDEMO Namespace
 - **Source**: ENSDEMO namespace from InterSystems IRIS instance  
 - **Download Date**: 2025-07-08
-- **Files**: 5,104+ classes (including % system classes)
-- **Size**: 8.4MB+ (download in progress)
+- **Files**: 637 % classes were downloaded but removed to avoid duplicates
+- **Note**: All % system classes are available in the system/ directory
 - **Method**: TypeScript client for complete namespace download
 
 ## File Organization

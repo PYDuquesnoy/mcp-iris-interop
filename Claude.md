@@ -71,32 +71,105 @@ Document and commit and push to git.
 
 ## Step 5
 
+Use DEPLOYMENT-NOTES.MD as a helper.
 Extend the Prototype with following functionality, which may require to a new REST API with a set of Methods to the Server.
 
 * You name the Rest API /api/mcp-interop
-* The Implementation is in the IRISAPP Namespace in the class Api.Mcp.Interop.cls which inherits %CSP.REST
+* The Implementation is in the IRISAPP Namespace in the class Api.MCPInterop.cls which inherits %CSP.REST
 * The Deployment of the WebApp needs to be done via an SQL Stored Procedure that needs to be created and executed. you can use %SYS.REST.DeployApplication to deploy the Web Application. Security must be user/password authentication which is value 32.
 * The Function implemented is list, which lists all Productions in a namespace. it can use GetProductionSummary from the Class Ens.Director.
 * Develop the new functions needed in client-proto, and in curl-test.
-* You may create an Intertoperability production class (make a clen directory for the )
+* You may create an Interoperability production class for testing in the samples directory.
 
 Document and commit and push to git.
 
-## Step 6
+## Step 6.1
+
+Add following functionality to Api.MCPInterop as a REST Call:
 
 
-* List the Productions defined in a Namespace
 * execute a method and return the results
 
-* Update the Current Production
+Test from the client-proto and generate a test in curl-test
+
+document and commit and push to git.
+
+## Step 6.2
+
+Add following functionality to Api.MCPInterop as a REST Call:
+
 * Start a Specific Production, or the Default current one
+
+Test from the client-proto and generate a test in curl-test. You may need a production class sample that can  be stored in the iris-samples directory.
+
+document and commit and push to git.
+
+* 
+
+## Step  6.3
+
+Add following functionality to Api.MCPInterop as a REST Call:
+
+* Update the Current Production
+  * this is used when a Business Service, Business Process, or Business Operation has been added/changed in the production
+
+Test from the client-proto and generate a test in curl-test. You may need a production class sample that can  be stored in the iris-samples directory.
+
+document and commit and push to git.
+
+## Step 6.4
+
+Add following functionality to Api.MCPInterop as a REST Call:
+
 * Stop a the default current Production
 * Clean the Current Production
+
+Document and commit and push to git.
+
+## Step 6.5
+
+Add following functionality to Api.MCPInterop as a REST Call:
+
 * Use the Testing Service to Call a BP or a BO for testing
+
+For this, you always need to check if the Production has the Enable Testing enabled and 
+
+Enable it if needed. 
+
+Also, start the production if not running, or update the production if testing enabled has been set.
+
+* use the legacy/cacheensdemo directory and the classes
+  * EnsPortal.TestingService.cls to see how the testing service can be called
+  * EnsLib.Testing.Service.cls to see the implementation that is beeing called
+  * EnsLib.Testing.Request.cls to se how to wrap the message to be tested before calling EnsLib.Testing.Service.
+
+Test the Funcionality by:
+
+ * Creating and Loading and starting a Production
+
+ * Add a BO that writes to an Ens,StringRequest message to a file in 
+
+ * /home/irisowner/dev/shared/out (as seen from the iris container) which is mapped to <project root>/intersystems-iris-dev-template/shared/out in the host project filesystem
+
+ * Call the BO using the testing Service
+
+   Document and git commit + push
+
+## Step 6.6
+
+Add following functionality to Api.MCPInterop as a REST Call:
+
 * Export the Messages log  and the Event log from the last Session in the list to debug the last test
 * Export the last N entries from the Messages Log to a local file
 * Export the last N entries from the Event Log to a local file
-* Create a Web Application for a REST Service
+
+Test the funcionality.
+
+Document and git commit + push
+
+## Step 6.7
+
+## 
 
 Determine, in the above list, which methods already exist, and which require a new REST API.
 

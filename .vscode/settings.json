@@ -1,0 +1,18 @@
+{
+    "objectscript.conn": {
+        "active": true,
+        "server": "mcp3",
+        "ns": "IRISAPP"
+    },
+    "intersystems.servers": {
+        "mcp3": {
+            "webServer": {
+                "scheme": "http",
+                "host": "localhost",
+                "port": 42002
+            },
+            "description": "Local iris for mcp3 project",
+            "username": "_SYSTEM"
+        }
+    }
+}
