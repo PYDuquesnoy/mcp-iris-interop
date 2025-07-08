@@ -10,7 +10,7 @@ Once working. Check into GitHub. Document
 
 Side Project Step 2:
 
-in the same prototype, Create a Deployment class andMethod that allows to create a New Rest API with a set of Methods to the Server.
+in the same prototype, Create a Deployment class and Method that allows to create a New Rest API with a set of Methods to the Server.
 
 * You name the Rest API /side/mcp-interop
 * The Implementation is in the IRISAPP Namespace in the class Side.Mcp.Interop.cls which inherits %CSP.REST

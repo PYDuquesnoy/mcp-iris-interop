@@ -47,6 +47,22 @@
   - ✅ Successfully tested all functionality against Docker IRIS instance
   - ✅ Updated configuration to connect to Docker container
 
+### 🔄 Side Project Step 1: ObjectScript Execution via SQL Stored Procedures
+- **Status**: Completed
+- **Date**: 2025-07-08
+- **Details**:
+  - ✅ Created bootstrap stored procedure system for executing ObjectScript code
+  - ✅ Implemented Bootstrap.Simple.cls with SqlProc methods for code execution
+  - ✅ Tested SQL CREATE PROCEDURE syntax for dynamic stored procedure creation
+  - ✅ Validated CALL syntax and SELECT function calls via Atelier API
+  - ✅ Created comprehensive test suite (step1-demo.sh, test-stored-procedure.sh)
+  - ✅ Documented working patterns and limitations in Exec-Proto-Bootstrap-Success.md
+  - ✅ Proven ability to execute arbitrary ObjectScript code via SQL queries
+  - ✅ Established foundation for REST API installation via stored procedures
+
+### ⏳ Side Project Step 2: REST API Installation via Stored Procedures
+- **Status**: In Progress
+
 ### ⏳ Step 5: REST API for Interoperability
 - **Status**: Pending
 

@@ -11,7 +11,8 @@ This is a multi-step project where we maximize the benefits of using Claude Code
 - ✅ **Step 1**: GitHub repository created
 - ✅ **Step 2**: InterSystems IRIS development environment setup complete
 - ✅ **Step 3**: VSCode plugin analysis and TypeScript prototype complete
-- ⏳ **Step 4**: Extend prototype with class management
+- ✅ **Step 4**: Extended prototype with class management functionality
+- ✅ **Side Project Step 1**: ObjectScript execution via SQL stored procedures
 - ⏳ **Step 5**: REST API for interoperability
 - ⏳ **Step 6**: Production management functions
 - ⏳ **Step 7**: MCP server implementation
@@ -44,17 +45,33 @@ mcp-iris-interop/
 ├── CLAUDE.md              # Project instructions
 ├── WorkLog.MD             # Development log
 ├── Dev-Status.MD          # Step completion status
-├── client-proto/          # TypeScript prototype (Step 3)
-├── curl-test/             # IRIS API validation scripts (Step 3)
-├── exec-proto/            # ObjectScript execution prototype (Side Project)
+├── client-proto/          # TypeScript prototype (Step 3-4)
+├── curl-test/             # IRIS API validation scripts (Step 3-4)
+├── exec-proto/            # ObjectScript execution prototype (Side Project Step 1)
 ├── iris-samples/          # Sample IRIS classes for upload/download testing
 │   ├── upload/           # Classes ready for upload to IRIS
 │   └── download/         # Downloaded classes from IRIS
-├── intersystems-iris-dev-template/  # IRIS development environment
-├── vscode-objectscript/   # VSCode plugin source code
+├── legacy/                # Downloaded sample classes from IRIS
+├── intersystems-iris-dev-template/  # Docker development environment (Step 2)
+└── vscode-objectscript/   # VSCode plugin source code
 ├── obsolete-server-classes/  # Non-functional classes from incomplete steps
 └── InterSystems-VSCode-API-Inventory.md  # API documentation
 ```
+
+### Side Project: exec-proto
+
+The `exec-proto/` directory contains a separate prototype that demonstrates executing ObjectScript code via SQL stored procedures:
+
+- **Purpose**: Bootstrap system for remote ObjectScript execution
+- **Key Features**:
+  - Creates stored procedures dynamically via SQL DDL
+  - Executes arbitrary ObjectScript code via CALL statements
+  - Provides foundation for REST API installation
+- **Key Files**:
+  - `Bootstrap.Simple.cls` - Simple bootstrap class with SqlProc methods
+  - `server-classes/Side.Mcp.Deploy.cls` - REST API deployment class
+  - `step1-demo.sh` - Working demonstration script
+  - `test-stored-procedure.sh` - Comprehensive test suite
 
 ## Current Status
 
