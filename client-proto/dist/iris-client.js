@@ -222,7 +222,7 @@ class IrisClient {
     /**
      * Upload (save) a class to IRIS
      */
-    async uploadClass(className, content, namespace, overwrite = true) {
+    async uploadClass(className, content, namespace, overwrite = true, ignoreConflict = true) {
         const ns = namespace || this.config.namespace || 'USER';
         const document = {
             enc: false,
@@ -230,7 +230,8 @@ class IrisClient {
         };
         const method = overwrite ? 'PUT' : 'POST';
         const encodedClassName = encodeURIComponent(className);
-        return this.request(method, `/v1/${ns}/doc/${encodedClassName}`, document);
+        const params = ignoreConflict ? { ignoreConflict: "1" } : undefined;
+        return this.request(method, `/v1/${ns}/doc/${encodedClassName}`, document, params);
     }
     /**
      * Download a class from IRIS
@@ -282,6 +283,94 @@ class IrisClient {
             const encodedClassName = encodeURIComponent(className);
             const response = await this.request('HEAD', `/v1/${ns}/doc/${encodedClassName}`);
             return true;
+        }
+        catch (error) {
+            return false;
+        }
+    }
+    // =============================================================================
+    // PRODUCTION MANAGEMENT METHODS (Step 5)
+    // =============================================================================
+    /**
+     * Get the base URL for the production management API
+     */
+    buildProductionApiUrl() {
+        const baseUrl = this.buildBaseUrl();
+        // Remove the /api/atelier suffix and add the production API path
+        const baseWithoutAtelier = baseUrl.replace('/api/atelier', '');
+        return `${baseWithoutAtelier}/api/mcp-interop`;
+    }
+    /**
+     * Make a request to the production management API
+     */
+    async productionApiRequest(method, endpoint) {
+        const url = `${this.buildProductionApiUrl()}${endpoint}`;
+        const response = await this.axios.request({
+            method,
+            url,
+            validateStatus: (status) => status < 504
+        });
+        if (response.status >= 400) {
+            throw new Error(`Production API request failed: ${response.status} ${response.statusText}`);
+        }
+        return response.data;
+    }
+    /**
+     * Test the production management API
+     */
+    async testProductionApi() {
+        return this.productionApiRequest('GET', '/test');
+    }
+    /**
+     * Get production management API status
+     */
+    async getProductionApiStatus() {
+        return this.productionApiRequest('GET', '/status');
+    }
+    /**
+     * List all productions in the current namespace
+     */
+    async listProductions() {
+        return this.productionApiRequest('GET', '/list');
+    }
+    /**
+     * Get production information with detailed logging
+     */
+    async getProductionInfo(verbose = false) {
+        if (verbose) {
+            console.log('Making request to production API...');
+            console.log(`URL: ${this.buildProductionApiUrl()}/list`);
+        }
+        const result = await this.listProductions();
+        if (verbose) {
+            console.log('Production API Response:');
+            console.log(`- API: ${result.api} v${result.version}`);
+            console.log(`- Namespace: ${result.namespace}`);
+            console.log(`- Ensemble Available: ${result.ensembleAvailable}`);
+            console.log(`- Production Count: ${result.count}`);
+            if (result.productions && result.productions.length > 0) {
+                console.log('Productions:');
+                result.productions.forEach((prod, i) => {
+                    console.log(`  ${i + 1}. ${prod.Name} (${prod.Status})`);
+                    if (prod.LastStartTime)
+                        console.log(`     Last Start: ${prod.LastStartTime}`);
+                    if (prod.LastStopTime)
+                        console.log(`     Last Stop: ${prod.LastStopTime}`);
+                });
+            }
+            else {
+                console.log('No productions found.');
+            }
+        }
+        return result;
+    }
+    /**
+     * Check if production management API is available
+     */
+    async isProductionApiAvailable() {
+        try {
+            const status = await this.testProductionApi();
+            return status && status.success === 1;
         }
         catch (error) {
             return false;

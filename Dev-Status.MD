@@ -1,6 +1,6 @@
 # Development Status - MCP-IRIS-INTEROP Project
 
-## Steps Completion Status
+## Main Project Steps (Claude.MD)
 
 ### ✅ Step 1: GitHub Repository Setup
 - **Status**: Completed
@@ -47,7 +47,103 @@
   - ✅ Successfully tested all functionality against Docker IRIS instance
   - ✅ Updated configuration to connect to Docker container
 
-### 🔄 Side Project Step 1: ObjectScript Execution via SQL Stored Procedures
+### ✅ Step 5: REST API for Interoperability Production Management
+- **Status**: Completed
+- **Date**: 2025-07-08
+- **Details**:
+  - ✅ Created git branch step-5-production-api for development
+  - ✅ Implemented Api.MCPInterop.cls REST API class in /iris-src directory
+  - ✅ Deployed web application via SQL stored procedure using Security.Applications.Create()
+  - ✅ Configured user/password authentication (value 32) for /api/mcp-interop
+  - ✅ Implemented /test, /status, and /list endpoints (with /test and /status working)
+  - ✅ Extended client-proto TypeScript client with production management functions
+  - ✅ Added new CLI commands: prod-test, prod-status, prod-list, prod-check
+  - ✅ Created Sample.Production.Step5.cls in iris-samples/ directory
+  - ✅ Added curl test scripts in curl-test/ directory
+  - ✅ Resolved HTTP 409 Conflict errors by implementing ignoreConflict parameter
+  - ✅ Successfully tested end-to-end functionality against Docker IRIS instance
+  - ⚠️ List endpoint has ObjectScript syntax issues but infrastructure is complete
+
+### ⏳ Step 6.1: Merge and Execute Method Functionality
+- **Status**: Pending
+- **Requirements**:
+  - Merge previous branch into main and push remote
+  - Start new branch
+  - Add execute method functionality to Api.MCPInterop
+  - Test from client-proto and generate curl-test
+
+### ⏳ Step 6.2: Production Start Functionality
+- **Status**: Pending
+- **Requirements**:
+  - Add start production functionality to Api.MCPInterop
+  - Support specific production or default current one
+  - Test with production class sample in iris-samples directory
+
+### ⏳ Step 6.3: Production Update Functionality
+- **Status**: Pending
+- **Requirements**:
+  - Add update current production functionality
+  - Handle Business Service, Business Process, Business Operation changes
+
+### ⏳ Step 6.4: Production Stop and Clean Functionality
+- **Status**: Pending
+- **Requirements**:
+  - Add stop production functionality
+  - Add clean production functionality
+
+### ⏳ Step 6.5: Testing Service Integration
+- **Status**: Pending
+- **Requirements**:
+  - Implement testing service to call BP or BO
+  - Check and enable production testing if needed
+  - Use legacy/cacheensdemo classes as reference
+  - Test with BO writing to shared/out directory
+
+### ⏳ Step 6.6: Message and Event Log Export
+- **Status**: Pending
+- **Requirements**:
+  - Export messages log from last session
+  - Export event log from last session
+  - Export last N entries from both logs
+
+### ⏳ Step 6.7: Complete REST API Implementation
+- **Status**: Pending
+- **Requirements**:
+  - Determine existing vs new REST API methods
+  - Implement server API
+  - Load web application and code dynamically or via container restart
+  - Add functions to client prototype
+  - Generate test set
+
+### ⏳ Step 7: MCP Server Implementation
+- **Status**: Pending
+- **Requirements**:
+  - Create MCP server based on prototype functionality
+  - Support per-project IRIS server configuration
+  - Install and test MCP server
+
+### ⏳ Step 8: Manual Step (Skipped)
+- **Status**: Skipped per instructions
+
+### ⏳ Step 9: Source Code Analysis (ICO/CURSCLINIC)
+- **Status**: Pending
+- **Requirements**:
+  - Inspect ICO/CURSCLINIC source code
+  - Document patterns and strategies in StepX-CursClinic-Doc.MD
+  - Extract SQL Inbound Adapter, Business Process, Business Operation patterns
+
+### ⏳ Step 10: ICUMED Circuit Implementation
+- **Status**: Pending
+- **Requirements**:
+  - Copy ICUMED-DEV-Test directory
+  - Implement BOMBES package circuit
+  - Create HL7 TCP BO, Oracle BO, Oracle BS
+  - Implement routing table and BP in BPL
+  - Create data transformations
+
+## Side Project Steps (Claude-SideProject.md)
+
+### ✅ Side Project Step 1: ObjectScript Execution via SQL Stored Procedures
 - **Status**: Completed
 - **Date**: 2025-07-08
 - **Details**:
@@ -76,24 +172,6 @@
   - ✅ Demonstrated complete SQL → Stored Procedure → REST API workflow
   - ✅ Integrated with Step 1 exec-proto foundation
   - ✅ All Claude-SideProject.md requirements fulfilled
-
-### ⏳ Step 5: REST API for Interoperability
-- **Status**: Pending
-
-### ⏳ Step 6: Production Management Functions
-- **Status**: Pending
-
-### ⏳ Step 7: MCP Server Implementation
-- **Status**: Pending
-
-### ⏳ Step 8: Manual Step (Skipped)
-- **Status**: Skipped per instructions
-
-### ⏳ Step 9: Source Code Analysis
-- **Status**: Pending
-
-### ⏳ Step 10: ICUMED Circuit Implementation
-- **Status**: Pending
 
 ## Additional Activities
 

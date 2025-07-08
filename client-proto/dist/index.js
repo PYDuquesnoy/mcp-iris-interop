@@ -252,7 +252,7 @@ program
             process.exit(1);
         }
         const content = fs_1.default.readFileSync(filePath, 'utf8').split('\n');
-        const result = await client.uploadClass(className, content, namespace, options.overwrite);
+        const result = await client.uploadClass(className, content, namespace, options.overwrite, true);
         if (result.status?.errors?.length > 0) {
             console.error('❌ Upload failed with errors:');
             result.status.errors.forEach(error => console.error(`  - ${error}`));
@@ -488,6 +488,152 @@ program
     }
     catch (error) {
         console.error('❌ Error executing query:', error instanceof Error ? error.message : String(error));
+        process.exit(1);
+    }
+});
+// =============================================================================
+// PRODUCTION MANAGEMENT COMMANDS (Step 5)
+// =============================================================================
+program
+    .command('prod-test')
+    .description('Test the production management API (Step 5)')
+    .option('-c, --config <path>', 'Configuration file path')
+    .option('-v, --verbose', 'Verbose output')
+    .action(async (options) => {
+    const config = loadConfig(options.config);
+    const client = new iris_client_1.IrisClient(config);
+    verboseLog('Testing production management API...', options.verbose);
+    try {
+        const result = await client.testProductionApi();
+        if (result && result.success === 1) {
+            console.log('✅ Production management API is working');
+            if (options.verbose) {
+                console.log('\nAPI Test Response:');
+                console.log(JSON.stringify(result, null, 2));
+            }
+        }
+        else {
+            console.log('❌ Production management API test failed');
+            console.log(JSON.stringify(result, null, 2));
+            process.exit(1);
+        }
+    }
+    catch (error) {
+        console.error('❌ Error testing production API:', error instanceof Error ? error.message : String(error));
+        process.exit(1);
+    }
+});
+program
+    .command('prod-status')
+    .description('Get production management API status (Step 5)')
+    .option('-c, --config <path>', 'Configuration file path')
+    .option('-v, --verbose', 'Verbose output')
+    .action(async (options) => {
+    const config = loadConfig(options.config);
+    const client = new iris_client_1.IrisClient(config);
+    verboseLog('Getting production management API status...', options.verbose);
+    try {
+        const result = await client.getProductionApiStatus();
+        console.log('✅ Production API Status:');
+        console.log(`  API: ${result.api} v${result.version}`);
+        console.log(`  Project: ${result.project || 'N/A'}`);
+        console.log(`  Step: ${result.step || 'N/A'}`);
+        console.log(`  Namespace: ${result.namespace}`);
+        console.log(`  Server: ${result.server}`);
+        console.log(`  Ensemble Available: ${result.ensembleAvailable}`);
+        console.log(`  Production Count: ${result.productionCount}`);
+        console.log(`  Web App Path: ${result.webAppPath || 'N/A'}`);
+        console.log(`  Endpoints: ${result.endpoints ? result.endpoints.join(', ') : 'N/A'}`);
+        if (options.verbose) {
+            console.log('\nFull Status Response:');
+            console.log(JSON.stringify(result, null, 2));
+        }
+    }
+    catch (error) {
+        console.error('❌ Error getting production API status:', error instanceof Error ? error.message : String(error));
+        process.exit(1);
+    }
+});
+program
+    .command('prod-list')
+    .description('List all productions in the namespace (Step 5)')
+    .option('-c, --config <path>', 'Configuration file path')
+    .option('-v, --verbose', 'Verbose output')
+    .action(async (options) => {
+    const config = loadConfig(options.config);
+    const client = new iris_client_1.IrisClient(config);
+    verboseLog('Listing productions...', options.verbose);
+    try {
+        const result = await client.getProductionInfo(options.verbose);
+        console.log('✅ Production List:');
+        console.log(`  Namespace: ${result.namespace}`);
+        console.log(`  Ensemble Available: ${result.ensembleAvailable}`);
+        console.log(`  Production Count: ${result.count}`);
+        if (result.productions && result.productions.length > 0) {
+            console.log('\n  Productions:');
+            result.productions.forEach((prod, i) => {
+                console.log(`    ${i + 1}. ${prod.Name}`);
+                console.log(`       Status: ${prod.Status}`);
+                if (prod.State)
+                    console.log(`       State: ${prod.State}`);
+                if (prod.AutoStart !== undefined)
+                    console.log(`       Auto Start: ${prod.AutoStart}`);
+                if (prod.LastStartTime)
+                    console.log(`       Last Start: ${prod.LastStartTime}`);
+                if (prod.LastStopTime)
+                    console.log(`       Last Stop: ${prod.LastStopTime}`);
+                console.log('');
+            });
+        }
+        else {
+            console.log('\n  No productions found in this namespace.');
+            if (!result.ensembleAvailable) {
+                console.log('  Note: Ensemble/Interoperability may not be enabled in this namespace.');
+            }
+        }
+        if (options.verbose) {
+            console.log('\nFull Production List Response:');
+            console.log(JSON.stringify(result, null, 2));
+        }
+    }
+    catch (error) {
+        console.error('❌ Error listing productions:', error instanceof Error ? error.message : String(error));
+        process.exit(1);
+    }
+});
+program
+    .command('prod-check')
+    .description('Check if production management API is available (Step 5)')
+    .option('-c, --config <path>', 'Configuration file path')
+    .option('-v, --verbose', 'Verbose output')
+    .action(async (options) => {
+    const config = loadConfig(options.config);
+    const client = new iris_client_1.IrisClient(config);
+    verboseLog('Checking production management API availability...', options.verbose);
+    try {
+        const available = await client.isProductionApiAvailable();
+        if (available) {
+            console.log('✅ Production management API is available and working');
+            if (options.verbose) {
+                // Also get detailed status when verbose
+                const status = await client.getProductionApiStatus();
+                console.log('\nDetailed API Status:');
+                console.log(`  API: ${status.api} v${status.version}`);
+                console.log(`  Web App Path: ${status.webAppPath}`);
+                console.log(`  Ensemble: ${status.ensembleAvailable ? 'Available' : 'Not Available'}`);
+            }
+        }
+        else {
+            console.log('❌ Production management API is not available');
+            console.log('   Please ensure:');
+            console.log('   - IRIS server is running');
+            console.log('   - Api.MCPInterop REST API is deployed');
+            console.log('   - Web application /api/mcp-interop exists');
+            process.exit(1);
+        }
+    }
+    catch (error) {
+        console.error('❌ Error checking production API:', error instanceof Error ? error.message : String(error));
         process.exit(1);
     }
 });

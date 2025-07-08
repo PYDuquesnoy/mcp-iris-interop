@@ -71,6 +71,8 @@ Document and commit and push to git.
 
 ## Step 5
 
+Lets' start working on a new git branch.
+
 Use DEPLOYMENT-NOTES.MD as a helper.
 Extend the Prototype with following functionality, which may require to a new REST API with a set of Methods to the Server.
 
@@ -79,11 +81,15 @@ Extend the Prototype with following functionality, which may require to a new RE
 * The Deployment of the WebApp needs to be done via an SQL Stored Procedure that needs to be created and executed. you can use %SYS.REST.DeployApplication to deploy the Web Application. Security must be user/password authentication which is value 32.
 * The Function implemented is list, which lists all Productions in a namespace. it can use GetProductionSummary from the Class Ens.Director.
 * Develop the new functions needed in client-proto, and in curl-test.
-* You may create an Interoperability production class for testing in the samples directory.
+* You may create an Interoperability production class for testing in the iris-samples directory.
 
 Document and commit and push to git.
 
 ## Step 6.1
+
+Merge the previous branch into main and push remote.
+
+Start working on a new Branch.
 
 Add following functionality to Api.MCPInterop as a REST Call:
 

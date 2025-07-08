@@ -46,3 +46,39 @@ export interface Namespace {
   name: string;
   status: string;
 }
+
+// Production management types for Step 5
+export interface Production {
+  Name: string;
+  Status: string;
+  LastStartTime?: string;
+  LastStopTime?: string;
+  State?: string;
+  AutoStart?: boolean;
+}
+
+export interface ProductionListResponse {
+  success: number;
+  api: string;
+  version: string;
+  namespace: string;
+  timestamp: string;
+  ensembleAvailable: boolean;
+  productions: Production[];
+  count: number;
+}
+
+export interface ApiStatus {
+  success: number;
+  api: string;
+  version: string;
+  namespace: string;
+  timestamp: string;
+  server: string;
+  project?: string;
+  step?: string;
+  ensembleAvailable: boolean;
+  productionCount: number | string;
+  endpoints?: string[];
+  webAppPath?: string;
+}

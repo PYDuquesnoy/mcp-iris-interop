@@ -1,6 +1,6 @@
 import axios, { AxiosInstance, AxiosResponse } from 'axios';
 import https from 'https';
-import { ConnectionConfig, AtelierResponse, ServerInfo, Namespace } from './types';
+import { ConnectionConfig, AtelierResponse, ServerInfo, Namespace, ProductionListResponse, ApiStatus } from './types';
 
 export class IrisClient {
   private config: ConnectionConfig;
@@ -271,7 +271,8 @@ export class IrisClient {
     className: string,
     content: string[],
     namespace?: string,
-    overwrite: boolean = true
+    overwrite: boolean = true,
+    ignoreConflict: boolean = true
   ): Promise<AtelierResponse> {
     const ns = namespace || this.config.namespace || 'USER';
     const document = {
@@ -281,7 +282,8 @@ export class IrisClient {
     
     const method = overwrite ? 'PUT' : 'POST';
     const encodedClassName = encodeURIComponent(className);
-    return this.request(method, `/v1/${ns}/doc/${encodedClassName}`, document);
+    const params = ignoreConflict ? { ignoreConflict: "1" } : undefined;
+    return this.request(method, `/v1/${ns}/doc/${encodedClassName}`, document, params);
   }
 
   /**
@@ -345,6 +347,104 @@ export class IrisClient {
       const encodedClassName = encodeURIComponent(className);
       const response = await this.request('HEAD', `/v1/${ns}/doc/${encodedClassName}`);
       return true;
+    } catch (error) {
+      return false;
+    }
+  }
+
+  // =============================================================================
+  // PRODUCTION MANAGEMENT METHODS (Step 5)
+  // =============================================================================
+
+  /**
+   * Get the base URL for the production management API
+   */
+  private buildProductionApiUrl(): string {
+    const baseUrl = this.buildBaseUrl();
+    // Remove the /api/atelier suffix and add the production API path
+    const baseWithoutAtelier = baseUrl.replace('/api/atelier', '');
+    return `${baseWithoutAtelier}/api/mcp-interop`;
+  }
+
+  /**
+   * Make a request to the production management API
+   */
+  private async productionApiRequest(method: string, endpoint: string): Promise<any> {
+    const url = `${this.buildProductionApiUrl()}${endpoint}`;
+    
+    const response = await this.axios.request({
+      method,
+      url,
+      validateStatus: (status) => status < 504
+    });
+
+    if (response.status >= 400) {
+      throw new Error(`Production API request failed: ${response.status} ${response.statusText}`);
+    }
+
+    return response.data;
+  }
+
+  /**
+   * Test the production management API
+   */
+  async testProductionApi(): Promise<any> {
+    return this.productionApiRequest('GET', '/test');
+  }
+
+  /**
+   * Get production management API status
+   */
+  async getProductionApiStatus(): Promise<ApiStatus> {
+    return this.productionApiRequest('GET', '/status');
+  }
+
+  /**
+   * List all productions in the current namespace
+   */
+  async listProductions(): Promise<ProductionListResponse> {
+    return this.productionApiRequest('GET', '/list');
+  }
+
+  /**
+   * Get production information with detailed logging
+   */
+  async getProductionInfo(verbose: boolean = false): Promise<ProductionListResponse> {
+    if (verbose) {
+      console.log('Making request to production API...');
+      console.log(`URL: ${this.buildProductionApiUrl()}/list`);
+    }
+
+    const result = await this.listProductions();
+    
+    if (verbose) {
+      console.log('Production API Response:');
+      console.log(`- API: ${result.api} v${result.version}`);
+      console.log(`- Namespace: ${result.namespace}`);
+      console.log(`- Ensemble Available: ${result.ensembleAvailable}`);
+      console.log(`- Production Count: ${result.count}`);
+      if (result.productions && result.productions.length > 0) {
+        console.log('Productions:');
+        result.productions.forEach((prod, i) => {
+          console.log(`  ${i + 1}. ${prod.Name} (${prod.Status})`);
+          if (prod.LastStartTime) console.log(`     Last Start: ${prod.LastStartTime}`);
+          if (prod.LastStopTime) console.log(`     Last Stop: ${prod.LastStopTime}`);
+        });
+      } else {
+        console.log('No productions found.');
+      }
+    }
+
+    return result;
+  }
+
+  /**
+   * Check if production management API is available
+   */
+  async isProductionApiAvailable(): Promise<boolean> {
+    try {
+      const status = await this.testProductionApi();
+      return status && status.success === 1;
     } catch (error) {
       return false;
     }
