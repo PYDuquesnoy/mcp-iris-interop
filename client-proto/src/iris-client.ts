@@ -482,4 +482,88 @@ export class IrisClient {
 
     return response.data;
   }
+
+  // =============================================================================
+  // BOOTSTRAP METHODS
+  // =============================================================================
+
+  /**
+   * Execute an SQL query and return results (duplicate method for now)
+   * Used for bootstrap functionality
+   */
+  async executeSQLQuery(query: string, parameters: any[] = [], namespace?: string): Promise<AtelierResponse> {
+    const ns = namespace || this.config.namespace || 'USER';
+    
+    return this.request('POST', `/v1/${ns}/action/query`, {
+      query,
+      parameters
+    });
+  }
+
+  /**
+   * Bootstrap the production management API
+   * This will upload and deploy the Api.MCPInterop REST API
+   */
+  async bootstrapProductionApi(apiClassPath: string, deployClassPath: string): Promise<any> {
+    const results = {
+      uploadApi: null as any,
+      uploadDeploy: null as any,
+      createProcedure: null as any,
+      executeDeploy: null as any,
+      success: false,
+      message: ''
+    };
+
+    try {
+      console.log('Step 1: Uploading Api.MCPInterop.cls...');
+      const apiContent = require('fs').readFileSync(apiClassPath, 'utf8').split('\n');
+      results.uploadApi = await this.uploadAndCompileClass('Api.MCPInterop.cls', apiContent, this.config.namespace);
+      
+      if (results.uploadApi.compile.status?.errors?.length > 0) {
+        throw new Error('Failed to compile Api.MCPInterop.cls');
+      }
+      console.log('✅ Api.MCPInterop.cls uploaded and compiled successfully');
+
+      console.log('\nStep 2: Uploading Api.MCPInterop.Deploy.cls...');
+      const deployContent = require('fs').readFileSync(deployClassPath, 'utf8').split('\n');
+      results.uploadDeploy = await this.uploadAndCompileClass('Api.MCPInterop.Deploy.cls', deployContent, this.config.namespace);
+      
+      if (results.uploadDeploy.compile.status?.errors?.length > 0) {
+        throw new Error('Failed to compile Api.MCPInterop.Deploy.cls');
+      }
+      console.log('✅ Api.MCPInterop.Deploy.cls uploaded and compiled successfully');
+
+      console.log('\nStep 3: Creating deployment stored procedure...');
+      const createProcedureQuery = 'CALL Api.MCPInterop.Deploy_CreateDeploymentStoredProcedure()';
+      results.createProcedure = await this.executeSQLQuery(createProcedureQuery);
+      console.log('✅ Deployment stored procedure created');
+
+      console.log('\nStep 4: Executing deployment...');
+      const deployQuery = 'CALL Api.MCPInterop.Deploy_DeployApiMcpInterop()';
+      results.executeDeploy = await this.executeSQLQuery(deployQuery);
+      
+      const deployResult = results.executeDeploy.result?.content?.[0]?.Result || '';
+      if (deployResult.includes('SUCCESS')) {
+        results.success = true;
+        results.message = deployResult;
+        console.log('✅ ' + deployResult);
+      } else {
+        throw new Error(deployResult || 'Deployment failed');
+      }
+
+      console.log('\nStep 5: Testing the deployed API...');
+      const testResult = await this.testProductionApi();
+      if (testResult.success === 1) {
+        console.log('✅ API is working!');
+      } else {
+        console.log('⚠️  API test failed, but deployment may still be successful');
+      }
+
+      return results;
+
+    } catch (error) {
+      results.message = error instanceof Error ? error.message : String(error);
+      throw error;
+    }
+  }
 }

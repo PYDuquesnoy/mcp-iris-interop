@@ -193,6 +193,9 @@ npm start prod-test         # Test production API
 npm start execute <code>    # Execute ObjectScript code remotely
 # Note: Use single quotes to prevent shell variable expansion:
 # npm start execute 'Set ^MyGlobal=$H'
+
+# Bootstrap API (First-time setup)
+npm start bootstrap-api     # Upload and deploy the production management API
 ```
 
 **Configuration**: Edit `client-proto/config.json` to specify your IRIS connection details.

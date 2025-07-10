@@ -230,6 +230,24 @@ The prototype can be tested against the Docker IRIS instance from Step 2:
 2. Verify connectivity: `curl http://localhost:42002/csp/sys/UtilHome.csp`
 3. Run the test suite: `npm run test`
 
+## Bootstrap Command
+
+The bootstrap command automatically deploys the production management API:
+
+```bash
+# First-time setup - upload and deploy the API
+npm start bootstrap-api
+```
+
+This command will:
+1. Upload `Api.MCPInterop.cls` to IRIS
+2. Upload `Api.MCPInterop.Deploy.cls` to IRIS
+3. Create deployment stored procedure
+4. Execute deployment to create `/api/mcp-interop` web application
+5. Test the deployed API
+
+After bootstrapping, all production management and execute commands will be available.
+
 ## Execute Command (Step 6.1)
 
 The execute command allows remote ObjectScript code execution:

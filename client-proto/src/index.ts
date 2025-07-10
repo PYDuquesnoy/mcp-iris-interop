@@ -776,5 +776,53 @@ program
     }
   });
 
+// =============================================================================
+// BOOTSTRAP COMMANDS
+// =============================================================================
+
+program
+  .command('bootstrap-api')
+  .description('Bootstrap the production management API - Upload and deploy Api.MCPInterop')
+  .option('-c, --config <path>', 'Configuration file path')
+  .option('-v, --verbose', 'Verbose output')
+  .action(async (options) => {
+    const config = loadConfig(options.config);
+    const client = new IrisClient(config);
+    
+    console.log('=== Bootstrapping Production Management API ===');
+    console.log(`Target: ${config.server}:${config.port}`);
+    console.log(`Namespace: ${config.namespace || 'USER'}`);
+    console.log();
+    
+    try {
+      // Use relative paths from the client-proto directory
+      const apiClassPath = path.join(__dirname, '..', '..', 'iris-src', 'Api.MCPInterop.cls');
+      const deployClassPath = path.join(__dirname, '..', '..', 'iris-src', 'Api.MCPInterop.Deploy.cls');
+      
+      if (!fs.existsSync(apiClassPath)) {
+        console.error(`❌ Api.MCPInterop.cls not found at: ${apiClassPath}`);
+        process.exit(1);
+      }
+      
+      if (!fs.existsSync(deployClassPath)) {
+        console.error(`❌ Api.MCPInterop.Deploy.cls not found at: ${deployClassPath}`);
+        process.exit(1);
+      }
+      
+      const results = await client.bootstrapProductionApi(apiClassPath, deployClassPath);
+      
+      console.log('\n=== Bootstrap Complete ===');
+      console.log('✅ Production Management API is now available at /api/mcp-interop');
+      console.log('\nYou can now use:');
+      console.log('  npm start prod-check    # Check API availability');
+      console.log('  npm start prod-list     # List productions');
+      console.log('  npm start execute <code> # Execute ObjectScript code');
+      
+    } catch (error) {
+      console.error('\n❌ Bootstrap failed:', error instanceof Error ? error.message : String(error));
+      process.exit(1);
+    }
+  });
+
 // Parse command line arguments
 program.parse();
