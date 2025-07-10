@@ -824,5 +824,98 @@ program
     }
   });
 
+// =============================================================================
+// PRODUCTION START COMMANDS (Step 6.2)
+// =============================================================================
+
+program
+  .command('prod-start')
+  .description('Start a specific production or the default current one (Step 6.2)')
+  .option('-p, --production <name>', 'Production name to start (optional - uses default if not specified)')
+  .option('-t, --timeout <seconds>', 'Timeout in seconds', '30')
+  .option('-c, --config <path>', 'Configuration file path')
+  .option('-v, --verbose', 'Verbose output')
+  .action(async (options) => {
+    const config = loadConfig(options.config);
+    const client = new IrisClient(config);
+    
+    verboseLog('Starting production...', options.verbose);
+    if (options.production) verboseLog(`Production: ${options.production}`, options.verbose);
+    verboseLog(`Timeout: ${options.timeout} seconds`, options.verbose);
+    
+    try {
+      const result = await client.startProduction(options.production, parseInt(options.timeout));
+      
+      if (result.success === 1) {
+        console.log('✅ Production start operation completed');
+        console.log(`  Action: ${result.action}`);
+        console.log(`  Production: ${result.productionName || 'Unknown'}`);
+        console.log(`  Result: ${result.result}`);
+        
+        if (options.verbose) {
+          console.log('\nFull Response:');
+          console.log(JSON.stringify(result, null, 2));
+        }
+      } else {
+        console.log('❌ Production start failed');
+        console.log(`  Error: ${result.error}`);
+        if (result.currentProduction) {
+          console.log(`  Current Production: ${result.currentProduction}`);
+        }
+        if (result.requestedProduction) {
+          console.log(`  Requested Production: ${result.requestedProduction}`);
+        }
+        process.exit(1);
+      }
+    } catch (error) {
+      console.error('❌ Error starting production:', error instanceof Error ? error.message : String(error));
+      process.exit(1);
+    }
+  });
+
+program
+  .command('prod-update')
+  .description('Update the current production configuration (Step 6.3)')
+  .option('-t, --timeout <seconds>', 'Timeout in seconds for stopping components', '10')
+  .option('-f, --force', 'Force kill unresponsive jobs')
+  .option('-c, --config <path>', 'Configuration file path')
+  .option('-v, --verbose', 'Verbose output')
+  .action(async (options) => {
+    const config = loadConfig(options.config);
+    const client = new IrisClient(config);
+    
+    verboseLog('Updating production configuration...', options.verbose);
+    verboseLog(`Timeout: ${options.timeout} seconds`, options.verbose);
+    verboseLog(`Force: ${options.force ? 'Yes' : 'No'}`, options.verbose);
+    
+    try {
+      const result = await client.updateProduction(parseInt(options.timeout), options.force);
+      
+      if (result.success === 1) {
+        console.log('✅ Production update operation completed');
+        console.log(`  Action: ${result.action}`);
+        console.log(`  Production: ${result.productionName || 'Unknown'}`);
+        console.log(`  Result: ${result.result}`);
+        console.log(`  Timeout: ${result.timeout}s`);
+        console.log(`  Force: ${result.force ? 'Yes' : 'No'}`);
+        
+        if (options.verbose) {
+          console.log('\nFull Response:');
+          console.log(JSON.stringify(result, null, 2));
+        }
+      } else {
+        console.log('❌ Production update failed');
+        console.log(`  Error: ${result.error}`);
+        if (result.productionName) {
+          console.log(`  Production: ${result.productionName}`);
+        }
+        process.exit(1);
+      }
+    } catch (error) {
+      console.error('❌ Error updating production:', error instanceof Error ? error.message : String(error));
+      process.exit(1);
+    }
+  });
+
 // Parse command line arguments
 program.parse();

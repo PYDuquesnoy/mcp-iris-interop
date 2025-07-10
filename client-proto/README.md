@@ -274,12 +274,74 @@ When using IRIS system variables like `$H`, `$HOROLOG`, etc., use **single quote
 Alternative: Escape the dollar sign with double quotes:
 ✅ `npm start execute "Set ^Test = \$H"`
 
+## Production Start Command (Step 6.2)
+
+The production start command allows starting InterSystems IRIS productions:
+
+```bash
+# Start the default/last production
+npm start prod-start
+
+# Start a specific production
+npm start prod-start --production "Demo.Production"
+
+# Start with custom timeout
+npm start prod-start --production "MyProduction" --timeout 60
+
+# Verbose output
+npm start prod-start --verbose
+```
+
+### Production Start Features:
+- Start default/last production when no production name specified
+- Start specific production by name
+- Handle already running productions gracefully
+- Configurable timeout for start operations
+- Comprehensive error handling and status reporting
+
+## Production Update Command (Step 6.3)
+
+The production update command updates the configuration of a currently running production:
+
+```bash
+# Update production with default timeout (10s)
+npm start prod-update
+
+# Update with custom timeout
+npm start prod-update --timeout 30
+
+# Force kill unresponsive jobs during update
+npm start prod-update --force
+
+# Update with both custom timeout and force
+npm start prod-update --timeout 20 --force
+
+# Verbose output
+npm start prod-update --verbose
+```
+
+### Production Update Features:
+- Update current running production configuration
+- Configurable timeout for stopping components gracefully
+- Force option to kill unresponsive jobs
+- Requires a production to be running
+- Used when Business Services, Processes, or Operations are added/changed
+
+### Available Production Commands:
+- `npm start prod-check` - Check if API is available
+- `npm start prod-list` - List all productions
+- `npm start prod-start` - Start a production (Step 6.2)
+- `npm start prod-update` - Update production configuration (Step 6.3)
+
 ## Next Steps
 
 This prototype provides the foundation for:
-- Step 4: Extended class management operations
-- Step 5: Interoperability REST API development
-- Step 6: Production management functions
+- Step 4: Extended class management operations ✅
+- Step 5: Interoperability REST API development ✅
+- Step 6.1: Execute ObjectScript code ✅
+- Step 6.2: Start production functionality ✅
+- Step 6.3: Update production functionality ✅
+- Step 6.4: Stop/Clean production functionality
 - Step 7: MCP server implementation
 
 The client can be easily extended with additional Atelier API endpoints as needed.

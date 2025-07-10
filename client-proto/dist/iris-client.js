@@ -403,6 +403,54 @@ class IrisClient {
         }
         return response.data;
     }
+    /**
+     * Start a specific production or the default current one
+     * Step 6.2 functionality
+     */
+    async startProduction(productionName, timeout) {
+        const url = `${this.buildProductionApiUrl()}/start`;
+        const payload = {
+            productionName: productionName || "",
+            timeout: timeout || 30
+        };
+        const response = await this.axios.request({
+            method: 'POST',
+            url,
+            data: payload,
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            validateStatus: (status) => status < 504
+        });
+        if (response.status >= 400) {
+            throw new Error(`Start Production API request failed: ${response.status} ${response.statusText}`);
+        }
+        return response.data;
+    }
+    /**
+     * Update the current production configuration
+     * Step 6.3 functionality - used when Business Services, Processes, or Operations are added/changed
+     */
+    async updateProduction(timeout, force) {
+        const url = `${this.buildProductionApiUrl()}/update`;
+        const payload = {
+            timeout: timeout || 10,
+            force: force ? 1 : 0
+        };
+        const response = await this.axios.request({
+            method: 'POST',
+            url,
+            data: payload,
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            validateStatus: (status) => status < 504
+        });
+        if (response.status >= 400) {
+            throw new Error(`Update Production API request failed: ${response.status} ${response.statusText}`);
+        }
+        return response.data;
+    }
     // =============================================================================
     // BOOTSTRAP METHODS
     // =============================================================================

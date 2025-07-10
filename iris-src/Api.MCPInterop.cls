@@ -19,6 +19,8 @@ XData UrlMap [ XMLNamespace = "http://www.intersystems.com/urlmap" ]
     <Route Url="/status" Method="GET" Call="GetStatus" />
     <Route Url="/test" Method="GET" Call="Test" />
     <Route Url="/execute" Method="POST" Call="ExecuteCode" />
+    <Route Url="/start" Method="POST" Call="StartProduction" />
+    <Route Url="/update" Method="POST" Call="UpdateProduction" />
 </Routes>
 }
 
@@ -201,6 +203,258 @@ ClassMethod ExecuteCode() As %Status
         Set error.error = ex.DisplayString()
         Set error.timestamp = $ZDATETIME($HOROLOG, 3)
         Set error.step = "Step 6.1 - Execute Method"
+        
+        Write error.%ToJSON()
+    }
+    
+    Quit $$$OK
+}
+
+/// Start a specific production or the default current one
+/// Step 6.2 functionality - production start management
+ClassMethod StartProduction() As %Status
+{
+    Try {
+        // Get JSON body from the request
+        Set body = %request.Content.Read()
+        Set json = ##class(%DynamicObject).%FromJSON(body)
+        
+        // Extract production name from request (optional)
+        Set productionName = json.productionName
+        Set timeout = json.timeout
+        If (timeout = "") Set timeout = 30
+        
+        // Check if Ensemble/Interoperability is available
+        Set ensembleAvailable = ##class(%Dictionary.ClassDefinition).%ExistsId("Ens.Director")
+        
+        If 'ensembleAvailable {
+            Set response = ##class(%DynamicObject).%New()
+            Set response.success = 0
+            Set response.api = "Api.MCPInterop"
+            Set response.error = "Ensemble/Interoperability not available in this namespace"
+            Set response.timestamp = $ZDATETIME($HOROLOG, 3)
+            Set response.step = "Step 6.2 - Start Production"
+            Write response.%ToJSON()
+            Return $$$OK
+        }
+        
+        // Check if a production is already running
+        Set currentProd = ##class(Ens.Director).GetActiveProductionName()
+        Set isRunning = ##class(Ens.Director).IsProductionRunning()
+        
+        If isRunning {
+            If (productionName '= "") && (productionName '= currentProd) {
+                // Different production requested - need to stop current first
+                Set response = ##class(%DynamicObject).%New()
+                Set response.success = 0
+                Set response.api = "Api.MCPInterop"
+                Set response.error = "Production '" _ currentProd _ "' is already running. Stop it first or omit productionName to use current."
+                Set response.currentProduction = currentProd
+                Set response.requestedProduction = productionName
+                Set response.timestamp = $ZDATETIME($HOROLOG, 3)
+                Set response.step = "Step 6.2 - Start Production"
+                Write response.%ToJSON()
+                Return $$$OK
+            } Else {
+                // Same production or no specific production requested
+                Set response = ##class(%DynamicObject).%New()
+                Set response.success = 1
+                Set response.api = "Api.MCPInterop"
+                Set response.result = "Production '" _ currentProd _ "' is already running"
+                Set response.productionName = currentProd
+                Set response.action = "already_running"
+                Set response.timestamp = $ZDATETIME($HOROLOG, 3)
+                Set response.step = "Step 6.2 - Start Production"
+                Write response.%ToJSON()
+                Return $$$OK
+            }
+        }
+        
+        // Start the production
+        Set result = ""
+        Set success = 1
+        Set error = ""
+        Set action = "started"
+        
+        Try {
+            // Redirect output to capture any device output during start
+            Set oldIORedirect = $IO
+            Open "NUL" Use "NUL"
+            
+            If (productionName = "") {
+                // Start default/last production
+                Set tSC = ##class(Ens.Director).StartProduction()
+                Set result = "Started default production"
+                Set action = "started_default"
+            } Else {
+                // Start specific production
+                Set tSC = ##class(Ens.Director).StartProduction(productionName)
+                Set result = "Started production: " _ productionName
+                Set action = "started_specific"
+            }
+            
+            // Restore output
+            Use oldIORedirect Close "NUL"
+            
+            If $$$ISERR(tSC) {
+                Set success = 0
+                Set error = $SYSTEM.Status.GetErrorText(tSC)
+                Set action = "failed"
+            } Else {
+                // Get the actual production name that was started
+                Set actualProdName = ##class(Ens.Director).GetActiveProductionName()
+                If (actualProdName '= "") {
+                    Set productionName = actualProdName
+                    Set result = "Started production: " _ actualProdName
+                }
+            }
+            
+        } Catch ex {
+            // Restore output in case of exception
+            Try { Use oldIORedirect Close "NUL" } Catch {}
+            Set success = 0
+            Set error = ex.DisplayString()
+            Set action = "failed"
+        }
+        
+        // Build response
+        Set response = ##class(%DynamicObject).%New()
+        Set response.success = success
+        Set response.api = "Api.MCPInterop"
+        Set response.step = "Step 6.2 - Start Production"
+        Set response.timestamp = $ZDATETIME($HOROLOG, 3)
+        Set response.namespace = $NAMESPACE
+        Set response.result = result
+        Set response.action = action
+        Set response.productionName = productionName
+        Set response.timeout = timeout
+        
+        If (error '= "") {
+            Set response.error = error
+        }
+        
+        Write response.%ToJSON()
+        
+    } Catch ex {
+        Set error = ##class(%DynamicObject).%New()
+        Set error.success = 0
+        Set error.api = "Api.MCPInterop"
+        Set error.error = ex.DisplayString()
+        Set error.timestamp = $ZDATETIME($HOROLOG, 3)
+        Set error.step = "Step 6.2 - Start Production"
+        
+        Write error.%ToJSON()
+    }
+    
+    Quit $$$OK
+}
+
+/// Update the current production configuration
+/// Step 6.3 functionality - used when Business Services, Processes, or Operations are added/changed
+ClassMethod UpdateProduction() As %Status
+{
+    Try {
+        // Get JSON body from the request
+        Set body = %request.Content.Read()
+        Set json = ##class(%DynamicObject).%FromJSON(body)
+        
+        // Extract parameters from request
+        Set timeout = json.timeout
+        Set force = json.force
+        
+        // Set defaults if not provided
+        If (timeout = "") Set timeout = 10
+        If (force = "") Set force = 0
+        
+        // Check if Ensemble/Interoperability is available
+        Set ensembleAvailable = ##class(%Dictionary.ClassDefinition).%ExistsId("Ens.Director")
+        
+        If 'ensembleAvailable {
+            Set response = ##class(%DynamicObject).%New()
+            Set response.success = 0
+            Set response.api = "Api.MCPInterop"
+            Set response.error = "Ensemble/Interoperability not available in this namespace"
+            Set response.timestamp = $ZDATETIME($HOROLOG, 3)
+            Set response.step = "Step 6.3 - Update Production"
+            Write response.%ToJSON()
+            Return $$$OK
+        }
+        
+        // Check if a production is currently running
+        Set currentProd = ##class(Ens.Director).GetActiveProductionName()
+        Set isRunning = ##class(Ens.Director).IsProductionRunning()
+        
+        If 'isRunning {
+            Set response = ##class(%DynamicObject).%New()
+            Set response.success = 0
+            Set response.api = "Api.MCPInterop"
+            Set response.error = "No production is currently running to update"
+            Set response.timestamp = $ZDATETIME($HOROLOG, 3)
+            Set response.step = "Step 6.3 - Update Production"
+            Write response.%ToJSON()
+            Return $$$OK
+        }
+        
+        // Update the production
+        Set result = ""
+        Set success = 1
+        Set error = ""
+        Set action = "updated"
+        
+        Try {
+            // Redirect output to capture any device output during update
+            Set oldIORedirect = $IO
+            Open "NUL" Use "NUL"
+            
+            // Call Ens.Director.UpdateProduction with timeout and force parameters
+            Set tSC = ##class(Ens.Director).UpdateProduction(timeout, force)
+            
+            // Restore output
+            Use oldIORedirect Close "NUL"
+            
+            If $$$ISOK(tSC) {
+                Set result = "Production '" _ currentProd _ "' updated successfully"
+                Set action = "updated"
+            } Else {
+                Set success = 0
+                Set error = $SYSTEM.Status.GetErrorText(tSC)
+                Set action = "failed"
+            }
+            
+        } Catch ex {
+            // Restore output in case of exception
+            Try { Use oldIORedirect Close "NUL" } Catch {}
+            Set success = 0
+            Set error = ex.DisplayString()
+            Set action = "failed"
+        }
+        
+        // Build response
+        Set response = ##class(%DynamicObject).%New()
+        Set response.success = success
+        Set response.api = "Api.MCPInterop"
+        Set response.step = "Step 6.3 - Update Production"
+        Set response.timestamp = $ZDATETIME($HOROLOG, 3)
+        Set response.namespace = $NAMESPACE
+        Set response.result = result
+        Set response.action = action
+        Set response.productionName = currentProd
+        Set response.timeout = timeout
+        Set response.force = force
+        
+        If (error '= "") {
+            Set response.error = error
+        }
+        
+        Write response.%ToJSON()
+        
+    } Catch ex {
+        Set error = ##class(%DynamicObject).%New()
+        Set error.success = 0
+        Set error.api = "Api.MCPInterop"
+        Set error.error = ex.DisplayString()
+        Set error.timestamp = $ZDATETIME($HOROLOG, 3)
+        Set error.step = "Step 6.3 - Update Production"
         
         Write error.%ToJSON()
     }
