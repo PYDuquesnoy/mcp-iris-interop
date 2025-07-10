@@ -104,7 +104,9 @@ document and commit and push to git.
 
 Add following functionality to Api.MCPInterop as a REST Call:
 
-* Start a Specific Production, or the Default current one
+* Start a Specific Production, or the Default current one. 
+  * Note: look at Ens.Director class for helper functions
+
 
 Test from the client-proto and generate a test in curl-test. You may need a production class sample that can  be stored in the iris-samples directory.
 
@@ -118,6 +120,7 @@ Add following functionality to Api.MCPInterop as a REST Call:
 
 * Update the Current Production
   * this is used when a Business Service, Business Process, or Business Operation has been added/changed in the production
+    * Note: look at Ens.Director class for helper functions
 
 Test from the client-proto and generate a test in curl-test. You may need a production class sample that can  be stored in the iris-samples directory.
 
@@ -129,6 +132,8 @@ Add following functionality to Api.MCPInterop as a REST Call:
 
 * Stop a the default current Production
 * Clean the Current Production
+  * Note: look at Ens.Director class for helper functions
+
 
 Document and commit and push to git.
 
@@ -148,6 +153,7 @@ Also, start the production if not running, or update the production if testing e
   * EnsPortal.TestingService.cls to see how the testing service can be called
   * EnsLib.Testing.Service.cls to see the implementation that is beeing called
   * EnsLib.Testing.Request.cls to se how to wrap the message to be tested before calling EnsLib.Testing.Service.
+  * If ou can, retrieve the SessionId of the testing session for further use.
 
 Test the Funcionality by:
 
@@ -165,15 +171,31 @@ Test the Funcionality by:
 
 Add following functionality to Api.MCPInterop as a REST Call:
 
-* Export the Messages log  and the Event log from the last Session in the list to debug the last test
-* Export the last N entries from the Messages Log to a local file
 * Export the last N entries from the Event Log to a local file
+* Export the Event Log Entries for the last session or the specified Session of a testing service call
+
+Notes: the classes are Ens.Util.Log (projected as Ens_Util.Log table)  
 
 Test the funcionality.
 
 Document and git commit + push
 
 ## Step 6.7
+
+Add following functionality to Api.MCPInterop as a REST Call:
+
+* Export the last N entries from the Messsage trace to a local file
+* Export the Message Trace and the Log Entries for the last session or the specified Session of a testing service call
+
+Notes: the classes are Ens.Util.Log (projected as Ens_Util.Log table) . For the Messages, the Header is in Ens.MessageHeader, and it gets joined with the Class Corresponding to MessageBodyClassname with the ID matching MessageBodyId
+
+Test the funcionality.
+
+Document and git commit + push
+
+
+
+## Step 6.8
 
 ## 
 
@@ -191,6 +213,10 @@ Document and commit and push to git.
 
 ## Step 7
 
+Make a Small Memory Document of the knowledg to save Claude memory. Refer to this to Purse the next steps. Maye reorganize this file so that you don't read it entirely each time
+
+## Step 8
+
 * In a different directory, Make an mcp Server based on the functiontality from the prototype
   * make sure the IRIS server connection details can be configured on a per project basis
 * Install the mcp server in this session
@@ -198,13 +224,13 @@ Document and commit and push to git.
 
 Document and commit and push to git.
 
-## Step 8
+## Step 9
 
 * ##this is a s skipped Step: ignore as I will run it manually. /* extract the source from the ICO dev instance or from their gitlab repo and dowload to ICO directory for next Step */
 
   
 
-## Step 9
+## Step 10
 
 * Inspect the Source Code in ICO/CURSCLINIC and document it in a Document in the project root StepX-CursClinic-Doc.MD. Make sure to extract the pattern and Strategies used for:
   * Writing a Business Service that uses an SQL Inbound Adapter to read from a Oracle Table

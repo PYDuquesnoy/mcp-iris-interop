@@ -158,21 +158,39 @@ cd curl-test
 - `IRIS_PASS` (default: SYS)
 - `IRIS_NS` (default: IRISAPP)
 
-### TypeScript Prototype Usage
+### TypeScript Prototype Usage (Preferred Method)
 
-The prototype provides a command-line interface to IRIS:
+**⭐ IMPORTANT**: The `client-proto/` TypeScript client is the **preferred method** for interacting with the IRIS server. Always use client-proto instead of curl or other methods for IRIS API operations.
+
+The prototype provides a comprehensive command-line interface to IRIS:
 
 ```bash
 cd client-proto
 npm install
 npm run build
 
-# Available commands
+# Basic connectivity and server info
 npm start test              # Test connectivity
 npm start server-info       # Get server information  
 npm start namespaces        # List namespaces
 npm start docs [namespace]  # List documents
+
+# Class management (Step 4)
+npm start classes           # List classes in namespace
+npm start packages          # List packages in namespace
+npm start upload <class> <file>     # Upload class to IRIS
+npm start download <class>  # Download class from IRIS
+npm start compile <class>   # Compile class in IRIS
+npm start upload-compile <class> <file>  # Upload and compile
+
+# Production management (Step 5)
+npm start prod-check        # Check production API availability
+npm start prod-status       # Get production API status
+npm start prod-list         # List all productions
+npm start prod-test         # Test production API
 ```
+
+**Configuration**: Edit `client-proto/config.json` to specify your IRIS connection details.
 
 ### Sample Classes (iris-samples/)
 
@@ -238,6 +256,30 @@ These collections provide extensive examples for:
 - Data transformations and message routing
 - Web services and REST API implementations
 - Dashboard and UI components (CSPX.Dashboard.*)
+
+## Development Guidelines
+
+### 🔧 IRIS Server Interaction
+
+**⭐ ALWAYS use `client-proto/` for IRIS server interactions**:
+- Client-proto is the standardized, tested method for all IRIS operations
+- Use client-proto commands instead of curl, direct REST calls, or other methods
+- Client-proto handles authentication, error handling, and response formatting consistently
+
+### 📚 Legacy Directory Consultation Requirement
+
+**⭐ BEFORE implementing new API functionality**:
+1. **Search `legacy/ensLib/`** (1,276 classes) for existing Ens.Director, EnsLib.*, and Ens.* implementations
+2. **Review `legacy/cacheensdemo/`** (203 classes) for working interoperability examples  
+3. **Check `legacy/system/`** (3,458 classes) for system-level functionality
+4. **Understand existing patterns** before writing new API endpoints
+
+**Example**: Before implementing production management, check:
+- `legacy/ensLib/Ens.Director.cls` - Production management methods
+- `legacy/ensLib/EnsLib.Testing.Service.cls` - Testing service implementation
+- `legacy/cacheensdemo/EnsPortal.TestingService.cls` - Testing service UI patterns
+
+This ensures new APIs use proven InterSystems patterns and avoid reinventing existing functionality.
 
 ## Key Achievements
 
