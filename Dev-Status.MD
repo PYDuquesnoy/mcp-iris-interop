@@ -127,35 +127,58 @@
   - ✅ Enhanced error handling to detect when no production is running
   - ✅ Successfully tested update functionality with proper error responses
 
-### ⏳ Step 6.4: Production Stop and Clean Functionality
-- **Status**: Pending
-- **Requirements**:
-  - Add stop production functionality
-  - Add clean production functionality
+### ✅ Step 6.4: Production Stop and Clean Functionality
+- **Status**: Completed
+- **Date**: 2025-07-10
+- **Details**:
+  - ✅ Added /stop POST endpoint to Api.MCPInterop.cls with Ens.Director.StopProduction()
+  - ✅ Added /clean POST endpoint with Ens.Director.CleanProduction()
+  - ✅ Implemented timeout and force options for graceful shutdown handling
+  - ✅ Added output redirection to prevent device output interference
+  - ✅ Added stopProduction() and cleanProduction() methods to IrisClient class
+  - ✅ Added prod-stop and prod-clean CLI commands with all options
+  - ✅ Created comprehensive curl test script (14-step6.4-stop-clean-production.sh)
+  - ✅ Successfully tested stop and clean functionality with proper error handling
 
-### ⏳ Step 6.5: Testing Service Integration
-- **Status**: Pending
-- **Requirements**:
-  - Implement testing service to call BP or BO
-  - Check and enable production testing if needed
-  - Use legacy/cacheensdemo classes as reference
-  - Test with BO writing to shared/out directory
+### ✅ Step 6.5: Testing Service Integration
+- **Status**: Completed
+- **Date**: 2025-07-10
+- **Details**:
+  - ✅ Added /test-service POST endpoint to Api.MCPInterop.cls
+  - ✅ Integrated with EnsLib.Testing.Service for Business Operation/Process testing
+  - ✅ Implemented automatic testing enablement for productions
+  - ✅ Added support for both synchronous and asynchronous calls
+  - ✅ Created Testing.Production.cls with FileWriterOperation for shared/out testing
+  - ✅ Added testService() method to IrisClient class with request data support
+  - ✅ Added prod-test-service CLI command with target, request class, and data options
+  - ✅ Created comprehensive curl test script (15-step6.5-testing-service.sh)
+  - ✅ Successfully tested BO calling functionality with file output verification
 
-### ⏳ Step 6.6: Message and Event Log Export
-- **Status**: Pending
-- **Requirements**:
-  - Export messages log from last session
-  - Export event log from last session
-  - Export last N entries from both logs
+### ✅ Step 6.6: Event Log Export Functionality
+- **Status**: Completed
+- **Date**: 2025-07-10
+- **Details**:
+  - ✅ Added /event-log POST endpoint to Api.MCPInterop.cls
+  - ✅ Implemented SQL-based event log querying from Ens_Util.Log table
+  - ✅ Added filtering by session ID, time, and maximum entries
+  - ✅ Exported event log entries with ID, type, method, text, and timestamp
+  - ✅ Added exportEventLog() method to IrisClient class
+  - ✅ Added export-event-log CLI command with filtering options
+  - ✅ Created comprehensive curl test script (16-step6.6-6.7-log-export.sh)
+  - ✅ Successfully tested event log export with various filter combinations
 
-### ⏳ Step 6.7: Complete REST API Implementation
-- **Status**: Pending
-- **Requirements**:
-  - Determine existing vs new REST API methods
-  - Implement server API
-  - Load web application and code dynamically or via container restart
-  - Add functions to client prototype
-  - Generate test set
+### ✅ Step 6.7: Message Trace Export Functionality
+- **Status**: Completed
+- **Date**: 2025-07-10
+- **Details**:
+  - ✅ Added /message-trace POST endpoint to Api.MCPInterop.cls
+  - ✅ Implemented SQL-based message trace querying from Ens.MessageHeader table
+  - ✅ Added optional log entries inclusion from Ens_Util.Log table
+  - ✅ Exported message headers with source, target, status, and timestamps
+  - ✅ Added exportMessageTrace() method to IrisClient class
+  - ✅ Added export-message-trace CLI command with log inclusion options
+  - ✅ Enhanced curl test script with message trace testing
+  - ✅ Successfully tested message trace export for debugging production issues
 
 ### ⏳ Step 7: MCP Server Implementation
 - **Status**: Pending

@@ -826,5 +826,248 @@ program
         process.exit(1);
     }
 });
+program
+    .command('prod-stop')
+    .description('Stop the current production (Step 6.4)')
+    .option('-t, --timeout <seconds>', 'Timeout in seconds for stopping components', '10')
+    .option('-f, --force', 'Force kill unresponsive jobs')
+    .option('-c, --config <path>', 'Configuration file path')
+    .option('-v, --verbose', 'Verbose output')
+    .action(async (options) => {
+    const config = loadConfig(options.config);
+    const client = new iris_client_1.IrisClient(config);
+    verboseLog('Stopping production...', options.verbose);
+    verboseLog(`Timeout: ${options.timeout} seconds`, options.verbose);
+    verboseLog(`Force: ${options.force ? 'Yes' : 'No'}`, options.verbose);
+    try {
+        const result = await client.stopProduction(parseInt(options.timeout), options.force);
+        if (result.success === 1) {
+            console.log('✅ Production stop operation completed');
+            console.log(`  Action: ${result.action}`);
+            console.log(`  Production: ${result.productionName || 'Unknown'}`);
+            console.log(`  Result: ${result.result}`);
+            console.log(`  Timeout: ${result.timeout}s`);
+            console.log(`  Force: ${result.force ? 'Yes' : 'No'}`);
+            if (options.verbose) {
+                console.log('\nFull Response:');
+                console.log(JSON.stringify(result, null, 2));
+            }
+        }
+        else {
+            console.log('❌ Production stop failed');
+            console.log(`  Error: ${result.error}`);
+            if (result.productionName) {
+                console.log(`  Production: ${result.productionName}`);
+            }
+            process.exit(1);
+        }
+    }
+    catch (error) {
+        console.error('❌ Error stopping production:', error instanceof Error ? error.message : String(error));
+        process.exit(1);
+    }
+});
+program
+    .command('prod-clean')
+    .description('Clean the current production state (Step 6.4)')
+    .option('-k, --kill-app-data', 'Kill application data as well')
+    .option('-c, --config <path>', 'Configuration file path')
+    .option('-v, --verbose', 'Verbose output')
+    .action(async (options) => {
+    const config = loadConfig(options.config);
+    const client = new iris_client_1.IrisClient(config);
+    verboseLog('Cleaning production...', options.verbose);
+    verboseLog(`Kill App Data: ${options.killAppData ? 'Yes' : 'No'}`, options.verbose);
+    try {
+        const result = await client.cleanProduction(options.killAppData);
+        if (result.success === 1) {
+            console.log('✅ Production clean operation completed');
+            console.log(`  Action: ${result.action}`);
+            console.log(`  Result: ${result.result}`);
+            console.log(`  Kill App Data: ${result.killAppDataToo ? 'Yes' : 'No'}`);
+            if (options.verbose) {
+                console.log('\nFull Response:');
+                console.log(JSON.stringify(result, null, 2));
+            }
+        }
+        else {
+            console.log('❌ Production clean failed');
+            console.log(`  Error: ${result.error}`);
+            process.exit(1);
+        }
+    }
+    catch (error) {
+        console.error('❌ Error cleaning production:', error instanceof Error ? error.message : String(error));
+        process.exit(1);
+    }
+});
+program
+    .command('prod-test-service')
+    .description('Test a Business Operation or Business Process using the Testing Service (Step 6.5)')
+    .argument('<target>', 'Target Business Operation or Business Process name')
+    .argument('<requestClass>', 'Request class name (e.g., Ens.StringRequest)')
+    .option('-d, --data <data>', 'Request data/message content')
+    .option('-a, --async', 'Use asynchronous call (default is synchronous)')
+    .option('-c, --config <path>', 'Configuration file path')
+    .option('-v, --verbose', 'Verbose output')
+    .action(async (target, requestClass, options) => {
+    const config = loadConfig(options.config);
+    const client = new iris_client_1.IrisClient(config);
+    verboseLog('Testing service call...', options.verbose);
+    verboseLog(`Target: ${target}`, options.verbose);
+    verboseLog(`Request Class: ${requestClass}`, options.verbose);
+    if (options.data)
+        verboseLog(`Data: ${options.data}`, options.verbose);
+    verboseLog(`Sync Call: ${!options.async}`, options.verbose);
+    try {
+        const result = await client.testService(target, requestClass, options.data, !options.async);
+        if (result.success === 1) {
+            console.log('✅ Testing service call completed');
+            console.log(`  Action: ${result.action}`);
+            console.log(`  Target: ${result.target}`);
+            console.log(`  Request Class: ${result.requestClass}`);
+            console.log(`  Result: ${result.result}`);
+            console.log(`  Session ID: ${result.sessionId || 'N/A'}`);
+            console.log(`  Testing Enabled: ${result.testingEnabled ? 'Yes' : 'No'}`);
+            if (result.responseData) {
+                console.log(`  Response: ${result.responseData}`);
+            }
+            if (options.verbose) {
+                console.log('\nFull Response:');
+                console.log(JSON.stringify(result, null, 2));
+            }
+        }
+        else {
+            console.log('❌ Testing service call failed');
+            console.log(`  Error: ${result.error}`);
+            if (result.target) {
+                console.log(`  Target: ${result.target}`);
+            }
+            if (result.productionName) {
+                console.log(`  Production: ${result.productionName}`);
+            }
+            process.exit(1);
+        }
+    }
+    catch (error) {
+        console.error('❌ Error calling testing service:', error instanceof Error ? error.message : String(error));
+        process.exit(1);
+    }
+});
+program
+    .command('export-event-log')
+    .description('Export Event Log entries for debugging (Step 6.6)')
+    .option('-n, --max-entries <number>', 'Maximum number of entries to export', '100')
+    .option('-s, --session-id <sessionId>', 'Filter by specific session ID')
+    .option('-t, --since-time <time>', 'Filter entries since this time (YYYY-MM-DD HH:MM:SS)')
+    .option('-c, --config <path>', 'Configuration file path')
+    .option('-v, --verbose', 'Verbose output')
+    .action(async (options) => {
+    const config = loadConfig(options.config);
+    const client = new iris_client_1.IrisClient(config);
+    verboseLog('Exporting event log...', options.verbose);
+    verboseLog(`Max Entries: ${options.maxEntries}`, options.verbose);
+    if (options.sessionId)
+        verboseLog(`Session ID: ${options.sessionId}`, options.verbose);
+    if (options.sinceTime)
+        verboseLog(`Since Time: ${options.sinceTime}`, options.verbose);
+    try {
+        const result = await client.exportEventLog(parseInt(options.maxEntries), options.sessionId, options.sinceTime);
+        if (result.success === 1) {
+            console.log('✅ Event log export completed');
+            console.log(`  Action: ${result.action}`);
+            console.log(`  Entries Count: ${result.entriesCount}`);
+            console.log(`  Result: ${result.result}`);
+            if (result.sessionId) {
+                console.log(`  Session ID Filter: ${result.sessionId}`);
+            }
+            if (result.sinceTime) {
+                console.log(`  Since Time Filter: ${result.sinceTime}`);
+            }
+            if (options.verbose && result.logEntries && result.logEntries.length > 0) {
+                console.log('\nEvent Log Entries:');
+                result.logEntries.forEach((entry, index) => {
+                    console.log(`  ${index + 1}. [${entry.TimeLogged}] ${entry.Type}: ${entry.Text}`);
+                    console.log(`     Source: ${entry.SourceClass}.${entry.SourceMethod} (Session: ${entry.Session})`);
+                });
+            }
+            if (options.verbose) {
+                console.log('\nFull Response:');
+                console.log(JSON.stringify(result, null, 2));
+            }
+        }
+        else {
+            console.log('❌ Event log export failed');
+            console.log(`  Error: ${result.error}`);
+            process.exit(1);
+        }
+    }
+    catch (error) {
+        console.error('❌ Error exporting event log:', error instanceof Error ? error.message : String(error));
+        process.exit(1);
+    }
+});
+program
+    .command('export-message-trace')
+    .description('Export Message Trace entries for debugging (Step 6.7)')
+    .option('-n, --max-entries <number>', 'Maximum number of entries to export', '100')
+    .option('-s, --session-id <sessionId>', 'Filter by specific session ID')
+    .option('-t, --since-time <time>', 'Filter entries since this time (YYYY-MM-DD HH:MM:SS)')
+    .option('--no-log-entries', 'Do not include log entries')
+    .option('-c, --config <path>', 'Configuration file path')
+    .option('-v, --verbose', 'Verbose output')
+    .action(async (options) => {
+    const config = loadConfig(options.config);
+    const client = new iris_client_1.IrisClient(config);
+    verboseLog('Exporting message trace...', options.verbose);
+    verboseLog(`Max Entries: ${options.maxEntries}`, options.verbose);
+    if (options.sessionId)
+        verboseLog(`Session ID: ${options.sessionId}`, options.verbose);
+    if (options.sinceTime)
+        verboseLog(`Since Time: ${options.sinceTime}`, options.verbose);
+    verboseLog(`Include Log Entries: ${options.logEntries}`, options.verbose);
+    try {
+        const result = await client.exportMessageTrace(parseInt(options.maxEntries), options.sessionId, options.sinceTime, options.logEntries);
+        if (result.success === 1) {
+            console.log('✅ Message trace export completed');
+            console.log(`  Action: ${result.action}`);
+            console.log(`  Message Count: ${result.messageCount}`);
+            if (result.includeLogEntries) {
+                console.log(`  Log Count: ${result.logCount}`);
+            }
+            console.log(`  Result: ${result.result}`);
+            if (result.sessionId) {
+                console.log(`  Session ID Filter: ${result.sessionId}`);
+            }
+            if (result.sinceTime) {
+                console.log(`  Since Time Filter: ${result.sinceTime}`);
+            }
+            if (options.verbose && result.messageEntries && result.messageEntries.length > 0) {
+                console.log('\nMessage Trace Entries:');
+                result.messageEntries.forEach((entry, index) => {
+                    console.log(`  ${index + 1}. [${entry.TimeCreated}] ${entry.Type} (Session: ${entry.SessionId})`);
+                    console.log(`     ${entry.SourceConfigName} -> ${entry.TargetConfigName}`);
+                    console.log(`     Status: ${entry.Status}, Body: ${entry.MessageBodyClassname}`);
+                    if (entry.MessageBody) {
+                        console.log(`     Content: ${entry.MessageBody}`);
+                    }
+                });
+            }
+            if (options.verbose) {
+                console.log('\nFull Response:');
+                console.log(JSON.stringify(result, null, 2));
+            }
+        }
+        else {
+            console.log('❌ Message trace export failed');
+            console.log(`  Error: ${result.error}`);
+            process.exit(1);
+        }
+    }
+    catch (error) {
+        console.error('❌ Error exporting message trace:', error instanceof Error ? error.message : String(error));
+        process.exit(1);
+    }
+});
 // Parse command line arguments
 program.parse();

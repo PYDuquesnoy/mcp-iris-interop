@@ -21,6 +21,11 @@ XData UrlMap [ XMLNamespace = "http://www.intersystems.com/urlmap" ]
     <Route Url="/execute" Method="POST" Call="ExecuteCode" />
     <Route Url="/start" Method="POST" Call="StartProduction" />
     <Route Url="/update" Method="POST" Call="UpdateProduction" />
+    <Route Url="/stop" Method="POST" Call="StopProduction" />
+    <Route Url="/clean" Method="POST" Call="CleanProduction" />
+    <Route Url="/test-service" Method="POST" Call="TestService" />
+    <Route Url="/event-log" Method="POST" Call="ExportEventLog" />
+    <Route Url="/message-trace" Method="POST" Call="ExportMessageTrace" />
 </Routes>
 }
 
@@ -455,6 +460,826 @@ ClassMethod UpdateProduction() As %Status
         Set error.error = ex.DisplayString()
         Set error.timestamp = $ZDATETIME($HOROLOG, 3)
         Set error.step = "Step 6.3 - Update Production"
+        
+        Write error.%ToJSON()
+    }
+    
+    Quit $$$OK
+}
+
+/// Stop the current production
+/// Step 6.4 functionality - stop default current production
+ClassMethod StopProduction() As %Status
+{
+    Try {
+        // Get JSON body from the request
+        Set body = %request.Content.Read()
+        Set json = ##class(%DynamicObject).%FromJSON(body)
+        
+        // Extract parameters from request
+        Set timeout = json.timeout
+        Set force = json.force
+        
+        // Set defaults if not provided
+        If (timeout = "") Set timeout = 10
+        If (force = "") Set force = 0
+        
+        // Check if Ensemble/Interoperability is available
+        Set ensembleAvailable = ##class(%Dictionary.ClassDefinition).%ExistsId("Ens.Director")
+        
+        If 'ensembleAvailable {
+            Set response = ##class(%DynamicObject).%New()
+            Set response.success = 0
+            Set response.api = "Api.MCPInterop"
+            Set response.error = "Ensemble/Interoperability not available in this namespace"
+            Set response.timestamp = $ZDATETIME($HOROLOG, 3)
+            Set response.step = "Step 6.4 - Stop Production"
+            Write response.%ToJSON()
+            Return $$$OK
+        }
+        
+        // Check if a production is currently running
+        Set currentProd = ##class(Ens.Director).GetActiveProductionName()
+        Set isRunning = ##class(Ens.Director).IsProductionRunning()
+        
+        If 'isRunning {
+            Set response = ##class(%DynamicObject).%New()
+            Set response.success = 0
+            Set response.api = "Api.MCPInterop"
+            Set response.error = "No production is currently running to stop"
+            Set response.timestamp = $ZDATETIME($HOROLOG, 3)
+            Set response.step = "Step 6.4 - Stop Production"
+            Write response.%ToJSON()
+            Return $$$OK
+        }
+        
+        // Stop the production
+        Set result = ""
+        Set success = 1
+        Set error = ""
+        Set action = "stopped"
+        
+        Try {
+            // Redirect output to capture any device output during stop
+            Set oldIORedirect = $IO
+            Open "NUL" Use "NUL"
+            
+            // Call Ens.Director.StopProduction with timeout and force parameters
+            Set tSC = ##class(Ens.Director).StopProduction(timeout, force)
+            
+            // Restore output
+            Use oldIORedirect Close "NUL"
+            
+            If $$$ISOK(tSC) {
+                Set result = "Production '" _ currentProd _ "' stopped successfully"
+                Set action = "stopped"
+            } Else {
+                Set success = 0
+                Set error = $SYSTEM.Status.GetErrorText(tSC)
+                Set action = "failed"
+            }
+            
+        } Catch ex {
+            // Restore output in case of exception
+            Try { Use oldIORedirect Close "NUL" } Catch {}
+            Set success = 0
+            Set error = ex.DisplayString()
+            Set action = "failed"
+        }
+        
+        // Build response
+        Set response = ##class(%DynamicObject).%New()
+        Set response.success = success
+        Set response.api = "Api.MCPInterop"
+        Set response.step = "Step 6.4 - Stop Production"
+        Set response.timestamp = $ZDATETIME($HOROLOG, 3)
+        Set response.namespace = $NAMESPACE
+        Set response.result = result
+        Set response.action = action
+        Set response.productionName = currentProd
+        Set response.timeout = timeout
+        Set response.force = force
+        
+        If (error '= "") {
+            Set response.error = error
+        }
+        
+        Write response.%ToJSON()
+        
+    } Catch ex {
+        Set error = ##class(%DynamicObject).%New()
+        Set error.success = 0
+        Set error.api = "Api.MCPInterop"
+        Set error.error = ex.DisplayString()
+        Set error.timestamp = $ZDATETIME($HOROLOG, 3)
+        Set error.step = "Step 6.4 - Stop Production"
+        
+        Write error.%ToJSON()
+    }
+    
+    Quit $$$OK
+}
+
+/// Clean the current production
+/// Step 6.4 functionality - clean current production state
+ClassMethod CleanProduction() As %Status
+{
+    Try {
+        // Get JSON body from the request
+        Set body = %request.Content.Read()
+        Set json = ##class(%DynamicObject).%FromJSON(body)
+        
+        // Extract parameters from request
+        Set killAppDataToo = json.killAppDataToo
+        
+        // Set defaults if not provided
+        If (killAppDataToo = "") Set killAppDataToo = 0
+        
+        // Check if Ensemble/Interoperability is available
+        Set ensembleAvailable = ##class(%Dictionary.ClassDefinition).%ExistsId("Ens.Director")
+        
+        If 'ensembleAvailable {
+            Set response = ##class(%DynamicObject).%New()
+            Set response.success = 0
+            Set response.api = "Api.MCPInterop"
+            Set response.error = "Ensemble/Interoperability not available in this namespace"
+            Set response.timestamp = $ZDATETIME($HOROLOG, 3)
+            Set response.step = "Step 6.4 - Clean Production"
+            Write response.%ToJSON()
+            Return $$$OK
+        }
+        
+        // Clean the production
+        Set result = ""
+        Set success = 1
+        Set error = ""
+        Set action = "cleaned"
+        
+        Try {
+            // Redirect output to capture any device output during clean
+            Set oldIORedirect = $IO
+            Open "NUL" Use "NUL"
+            
+            // Call Ens.Director.CleanProduction
+            Set tSC = ##class(Ens.Director).CleanProduction(killAppDataToo)
+            
+            // Restore output
+            Use oldIORedirect Close "NUL"
+            
+            If $$$ISOK(tSC) {
+                Set result = "Production cleaned successfully"
+                Set action = "cleaned"
+            } Else {
+                Set success = 0
+                Set error = $SYSTEM.Status.GetErrorText(tSC)
+                Set action = "failed"
+            }
+            
+        } Catch ex {
+            // Restore output in case of exception
+            Try { Use oldIORedirect Close "NUL" } Catch {}
+            Set success = 0
+            Set error = ex.DisplayString()
+            Set action = "failed"
+        }
+        
+        // Build response
+        Set response = ##class(%DynamicObject).%New()
+        Set response.success = success
+        Set response.api = "Api.MCPInterop"
+        Set response.step = "Step 6.4 - Clean Production"
+        Set response.timestamp = $ZDATETIME($HOROLOG, 3)
+        Set response.namespace = $NAMESPACE
+        Set response.result = result
+        Set response.action = action
+        Set response.killAppDataToo = killAppDataToo
+        
+        If (error '= "") {
+            Set response.error = error
+        }
+        
+        Write response.%ToJSON()
+        
+    } Catch ex {
+        Set error = ##class(%DynamicObject).%New()
+        Set error.success = 0
+        Set error.api = "Api.MCPInterop"
+        Set error.error = ex.DisplayString()
+        Set error.timestamp = $ZDATETIME($HOROLOG, 3)
+        Set error.step = "Step 6.4 - Clean Production"
+        
+        Write error.%ToJSON()
+    }
+    
+    Quit $$$OK
+}
+
+/// Use the Testing Service to Call a BP or BO for testing
+/// Step 6.5 functionality - testing service integration
+ClassMethod TestService() As %Status
+{
+    Try {
+        // Get JSON body from the request
+        Set body = %request.Content.Read()
+        Set json = ##class(%DynamicObject).%FromJSON(body)
+        
+        // Extract parameters from request
+        Set target = json.target
+        Set requestClass = json.requestClass
+        Set requestData = json.requestData
+        Set syncCall = json.syncCall
+        If (syncCall = "") Set syncCall = 1
+        
+        // Check if Ensemble/Interoperability is available
+        Set ensembleAvailable = ##class(%Dictionary.ClassDefinition).%ExistsId("Ens.Director")
+        
+        If 'ensembleAvailable {
+            Set response = ##class(%DynamicObject).%New()
+            Set response.success = 0
+            Set response.api = "Api.MCPInterop"
+            Set response.error = "Ensemble/Interoperability not available in this namespace"
+            Set response.timestamp = $ZDATETIME($HOROLOG, 3)
+            Set response.step = "Step 6.5 - Test Service"
+            Write response.%ToJSON()
+            Return $$$OK
+        }
+        
+        // Check if a production is currently running
+        Set currentProd = ##class(Ens.Director).GetActiveProductionName()
+        Set isRunning = ##class(Ens.Director).IsProductionRunning()
+        
+        If 'isRunning {
+            Set response = ##class(%DynamicObject).%New()
+            Set response.success = 0
+            Set response.api = "Api.MCPInterop"
+            Set response.error = "No production is currently running. Start a production first."
+            Set response.timestamp = $ZDATETIME($HOROLOG, 3)
+            Set response.step = "Step 6.5 - Test Service"
+            Write response.%ToJSON()
+            Return $$$OK
+        }
+        
+        // Check if testing is enabled for the production
+        Set testingEnabled = ..GetIsTestingEnabled(currentProd)
+        If 'testingEnabled {
+            // Try to enable testing and update production
+            Set tSC = ..EnableTestingOnProduction(currentProd)
+            If $$$ISERR(tSC) {
+                Set response = ##class(%DynamicObject).%New()
+                Set response.success = 0
+                Set response.api = "Api.MCPInterop"
+                Set response.error = "Testing not enabled and failed to enable: " _ $SYSTEM.Status.GetErrorText(tSC)
+                Set response.timestamp = $ZDATETIME($HOROLOG, 3)
+                Set response.step = "Step 6.5 - Test Service"
+                Write response.%ToJSON()
+                Return $$$OK
+            }
+        }
+        
+        // Validate required parameters
+        If (target = "") {
+            Set response = ##class(%DynamicObject).%New()
+            Set response.success = 0
+            Set response.api = "Api.MCPInterop"
+            Set response.error = "Target parameter is required (target Business Operation or Business Process)"
+            Set response.timestamp = $ZDATETIME($HOROLOG, 3)
+            Set response.step = "Step 6.5 - Test Service"
+            Write response.%ToJSON()
+            Return $$$OK
+        }
+        
+        If (requestClass = "") {
+            Set response = ##class(%DynamicObject).%New()
+            Set response.success = 0
+            Set response.api = "Api.MCPInterop"
+            Set response.error = "RequestClass parameter is required (e.g., Ens.StringRequest)"
+            Set response.timestamp = $ZDATETIME($HOROLOG, 3)
+            Set response.step = "Step 6.5 - Test Service"
+            Write response.%ToJSON()
+            Return $$$OK
+        }
+        
+        // Create request object
+        Set result = ""
+        Set success = 1
+        Set error = ""
+        Set action = "tested"
+        Set sessionId = ""
+        Set responseData = ""
+        
+        Try {
+            // Redirect output to capture any device output during test
+            Set oldIORedirect = $IO
+            Open "NUL" Use "NUL"
+            
+            // Create the request object
+            Set requestObj = $CLASSMETHOD(requestClass, "%New")
+            If '$IsObject(requestObj) {
+                Set success = 0
+                Set error = "Failed to create request object of class: " _ requestClass
+            } Else {
+                // Set request data if provided
+                If (requestData '= "") {
+                    // For Ens.StringRequest, set StringValue property
+                    If (requestClass = "Ens.StringRequest") {
+                        Set requestObj.StringValue = requestData
+                    }
+                    // For other request types, you may need to add more handling here
+                }
+                
+                // Call the testing service
+                Set testingResponse = ""
+                Set tSC = ##class(EnsLib.Testing.Service).SendTestRequest(target, requestObj, .testingResponse, .sessionId, syncCall)
+                
+                If $$$ISOK(tSC) {
+                    Set result = "Test request sent successfully to target: " _ target
+                    Set action = "tested"
+                    
+                    // If we got a response, capture it
+                    If $IsObject(testingResponse) {
+                        Set responseData = testingResponse.%ClassName(1)
+                        // For Ens.StringResponse, capture the StringValue
+                        If (testingResponse.%ClassName(1) = "Ens.StringResponse") {
+                            Set responseData = responseData _ ": " _ testingResponse.StringValue
+                        }
+                    }
+                } Else {
+                    Set success = 0
+                    Set error = $SYSTEM.Status.GetErrorText(tSC)
+                    Set action = "failed"
+                }
+            }
+            
+            // Restore output
+            Use oldIORedirect Close "NUL"
+            
+        } Catch ex {
+            // Restore output in case of exception
+            Try { Use oldIORedirect Close "NUL" } Catch {}
+            Set success = 0
+            Set error = ex.DisplayString()
+            Set action = "failed"
+        }
+        
+        // Build response
+        Set response = ##class(%DynamicObject).%New()
+        Set response.success = success
+        Set response.api = "Api.MCPInterop"
+        Set response.step = "Step 6.5 - Test Service"
+        Set response.timestamp = $ZDATETIME($HOROLOG, 3)
+        Set response.namespace = $NAMESPACE
+        Set response.result = result
+        Set response.action = action
+        Set response.target = target
+        Set response.requestClass = requestClass
+        Set response.requestData = requestData
+        Set response.syncCall = syncCall
+        Set response.sessionId = sessionId
+        Set response.productionName = currentProd
+        Set response.testingEnabled = testingEnabled
+        
+        If (responseData '= "") {
+            Set response.responseData = responseData
+        }
+        
+        If (error '= "") {
+            Set response.error = error
+        }
+        
+        Write response.%ToJSON()
+        
+    } Catch ex {
+        Set error = ##class(%DynamicObject).%New()
+        Set error.success = 0
+        Set error.api = "Api.MCPInterop"
+        Set error.error = ex.DisplayString()
+        Set error.timestamp = $ZDATETIME($HOROLOG, 3)
+        Set error.step = "Step 6.5 - Test Service"
+        
+        Write error.%ToJSON()
+    }
+    
+    Quit $$$OK
+}
+
+/// Check if testing is enabled for a production
+ClassMethod GetIsTestingEnabled(pProduction As %String) As %Boolean
+{
+    Set tEnabled = 0
+    
+    Try {
+        // Check if production is loaded in runtime
+        If $Data($$$EnsRuntime) && ($G($$$EnsRuntime("Name")) = pProduction) {
+            Set tEnabled = +$G($$$EnsRuntime("TestingEnabled"))
+        } Else {
+            // Check production definition
+            &sql(SELECT TestingEnabled INTO :tEnabled
+                FROM Ens_Config.Production
+                WHERE Name = :pProduction)
+            
+            If (SQLCODE '= 0) {
+                Set tEnabled = 0
+            }
+        }
+        
+    } Catch ex {
+        Set tEnabled = 0
+    }
+    
+    Quit +tEnabled
+}
+
+/// Enable testing on a production and update it
+ClassMethod EnableTestingOnProduction(pProduction As %String) As %Status
+{
+    Set tSC = $$$OK
+    
+    Try {
+        // Update the production definition to enable testing
+        &sql(UPDATE Ens_Config.Production SET TestingEnabled = 1 WHERE Name = :pProduction)
+        
+        If (SQLCODE '= 0) {
+            Set tSC = $$$ERROR($$$GeneralError, "Failed to enable testing on production: " _ pProduction)
+        } Else {
+            // Update the running production to apply the change
+            Set tSC = ##class(Ens.Director).UpdateProduction(10, 0)
+        }
+        
+    } Catch ex {
+        Set tSC = ex.AsStatus()
+    }
+    
+    Quit tSC
+}
+
+/// Export Event Log entries
+/// Step 6.6 functionality - export event log for debugging
+ClassMethod ExportEventLog() As %Status
+{
+    Try {
+        // Get JSON body from the request
+        Set body = %request.Content.Read()
+        Set json = ##class(%DynamicObject).%FromJSON(body)
+        
+        // Extract parameters from request
+        Set maxEntries = json.maxEntries
+        Set sessionId = json.sessionId
+        Set sinceTime = json.sinceTime
+        
+        // Set defaults if not provided
+        If (maxEntries = "") Set maxEntries = 100
+        
+        // Check if Ensemble/Interoperability is available
+        Set ensembleAvailable = ##class(%Dictionary.ClassDefinition).%ExistsId("Ens.Director")
+        
+        If 'ensembleAvailable {
+            Set response = ##class(%DynamicObject).%New()
+            Set response.success = 0
+            Set response.api = "Api.MCPInterop"
+            Set response.error = "Ensemble/Interoperability not available in this namespace"
+            Set response.timestamp = $ZDATETIME($HOROLOG, 3)
+            Set response.step = "Step 6.6 - Export Event Log"
+            Write response.%ToJSON()
+            Return $$$OK
+        }
+        
+        // Build SQL query based on parameters
+        Set sql = "SELECT TOP ? ID, TimeLogged, Type, Job, Session, SourceClass, SourceMethod, Text FROM Ens_Util.Log"
+        Set conditions = ""
+        Set params = ""
+        Set paramCount = 1
+        
+        // Add conditions based on parameters
+        If (sessionId '= "") {
+            Set conditions = conditions _ " Session = ?"
+            Set params = $LB(maxEntries, sessionId)
+            Set paramCount = paramCount + 1
+        } Else {
+            Set params = $LB(maxEntries)
+        }
+        
+        If (sinceTime '= "") {
+            If (conditions '= "") Set conditions = conditions _ " AND"
+            Set conditions = conditions _ " TimeLogged >= ?"
+            If (sessionId '= "") {
+                Set params = $LB(maxEntries, sessionId, sinceTime)
+            } Else {
+                Set params = $LB(maxEntries, sinceTime)
+            }
+            Set paramCount = paramCount + 1
+        }
+        
+        If (conditions '= "") {
+            Set sql = sql _ " WHERE" _ conditions
+        }
+        
+        Set sql = sql _ " ORDER BY TimeLogged DESC"
+        
+        // Execute query and collect results
+        Set result = ""
+        Set success = 1
+        Set error = ""
+        Set action = "exported"
+        Set logEntries = ##class(%DynamicArray).%New()
+        Set entriesCount = 0
+        
+        Try {
+            Set statement = ##class(%SQL.Statement).%New()
+            Set tSC = statement.%Prepare(sql)
+            If $$$ISERR(tSC) {
+                Set success = 0
+                Set error = "Failed to prepare SQL: " _ $SYSTEM.Status.GetErrorText(tSC)
+            } Else {
+                Set resultSet = statement.%Execute(params...)
+                
+                While resultSet.%Next() {
+                    Set entry = ##class(%DynamicObject).%New()
+                    Set entry.ID = resultSet.%Get("ID")
+                    Set entry.TimeLogged = resultSet.%Get("TimeLogged")
+                    Set entry.Type = resultSet.%Get("Type")
+                    Set entry.Job = resultSet.%Get("Job")
+                    Set entry.Session = resultSet.%Get("Session")
+                    Set entry.SourceClass = resultSet.%Get("SourceClass")
+                    Set entry.SourceMethod = resultSet.%Get("SourceMethod")
+                    Set entry.Text = resultSet.%Get("Text")
+                    
+                    Do logEntries.%Push(entry)
+                    Set entriesCount = entriesCount + 1
+                }
+                
+                Set result = "Successfully exported " _ entriesCount _ " event log entries"
+                Set action = "exported"
+            }
+            
+        } Catch ex {
+            Set success = 0
+            Set error = ex.DisplayString()
+            Set action = "failed"
+        }
+        
+        // Build response
+        Set response = ##class(%DynamicObject).%New()
+        Set response.success = success
+        Set response.api = "Api.MCPInterop"
+        Set response.step = "Step 6.6 - Export Event Log"
+        Set response.timestamp = $ZDATETIME($HOROLOG, 3)
+        Set response.namespace = $NAMESPACE
+        Set response.result = result
+        Set response.action = action
+        Set response.maxEntries = maxEntries
+        Set response.entriesCount = entriesCount
+        Set response.logEntries = logEntries
+        
+        If (sessionId '= "") {
+            Set response.sessionId = sessionId
+        }
+        
+        If (sinceTime '= "") {
+            Set response.sinceTime = sinceTime
+        }
+        
+        If (error '= "") {
+            Set response.error = error
+        }
+        
+        Write response.%ToJSON()
+        
+    } Catch ex {
+        Set error = ##class(%DynamicObject).%New()
+        Set error.success = 0
+        Set error.api = "Api.MCPInterop"
+        Set error.error = ex.DisplayString()
+        Set error.timestamp = $ZDATETIME($HOROLOG, 3)
+        Set error.step = "Step 6.6 - Export Event Log"
+        
+        Write error.%ToJSON()
+    }
+    
+    Quit $$$OK
+}
+
+/// Export Message Trace entries
+/// Step 6.7 functionality - export message trace and log entries for debugging
+ClassMethod ExportMessageTrace() As %Status
+{
+    Try {
+        // Get JSON body from the request
+        Set body = %request.Content.Read()
+        Set json = ##class(%DynamicObject).%FromJSON(body)
+        
+        // Extract parameters from request
+        Set maxEntries = json.maxEntries
+        Set sessionId = json.sessionId
+        Set sinceTime = json.sinceTime
+        Set includeLogEntries = json.includeLogEntries
+        
+        // Set defaults if not provided
+        If (maxEntries = "") Set maxEntries = 100
+        If (includeLogEntries = "") Set includeLogEntries = 1
+        
+        // Check if Ensemble/Interoperability is available
+        Set ensembleAvailable = ##class(%Dictionary.ClassDefinition).%ExistsId("Ens.Director")
+        
+        If 'ensembleAvailable {
+            Set response = ##class(%DynamicObject).%New()
+            Set response.success = 0
+            Set response.api = "Api.MCPInterop"
+            Set response.error = "Ensemble/Interoperability not available in this namespace"
+            Set response.timestamp = $ZDATETIME($HOROLOG, 3)
+            Set response.step = "Step 6.7 - Export Message Trace"
+            Write response.%ToJSON()
+            Return $$$OK
+        }
+        
+        // Export message headers and bodies
+        Set result = ""
+        Set success = 1
+        Set error = ""
+        Set action = "exported"
+        Set messageEntries = ##class(%DynamicArray).%New()
+        Set logEntries = ##class(%DynamicArray).%New()
+        Set messageCount = 0
+        Set logCount = 0
+        
+        Try {
+            // Build SQL query for message headers
+            Set sql = "SELECT TOP ? ID, TimeCreated, SessionId, MessageBodyClassname, MessageBodyId, SourceConfigName, TargetConfigName, Type, Status FROM Ens.MessageHeader"
+            Set conditions = ""
+            Set params = ""
+            
+            // Add conditions based on parameters
+            If (sessionId '= "") {
+                Set conditions = conditions _ " SessionId = ?"
+                Set params = $LB(maxEntries, sessionId)
+            } Else {
+                Set params = $LB(maxEntries)
+            }
+            
+            If (sinceTime '= "") {
+                If (conditions '= "") Set conditions = conditions _ " AND"
+                Set conditions = conditions _ " TimeCreated >= ?"
+                If (sessionId '= "") {
+                    Set params = $LB(maxEntries, sessionId, sinceTime)
+                } Else {
+                    Set params = $LB(maxEntries, sinceTime)
+                }
+            }
+            
+            If (conditions '= "") {
+                Set sql = sql _ " WHERE" _ conditions
+            }
+            
+            Set sql = sql _ " ORDER BY TimeCreated DESC"
+            
+            // Execute message headers query
+            Set statement = ##class(%SQL.Statement).%New()
+            Set tSC = statement.%Prepare(sql)
+            If $$$ISERR(tSC) {
+                Set success = 0
+                Set error = "Failed to prepare message headers SQL: " _ $SYSTEM.Status.GetErrorText(tSC)
+            } Else {
+                Set resultSet = statement.%Execute(params...)
+                
+                While resultSet.%Next() {
+                    Set entry = ##class(%DynamicObject).%New()
+                    Set entry.ID = resultSet.%Get("ID")
+                    Set entry.TimeCreated = resultSet.%Get("TimeCreated")
+                    Set entry.SessionId = resultSet.%Get("SessionId")
+                    Set entry.MessageBodyClassname = resultSet.%Get("MessageBodyClassname")
+                    Set entry.MessageBodyId = resultSet.%Get("MessageBodyId")
+                    Set entry.SourceConfigName = resultSet.%Get("SourceConfigName")
+                    Set entry.TargetConfigName = resultSet.%Get("TargetConfigName")
+                    Set entry.Type = resultSet.%Get("Type")
+                    Set entry.Status = resultSet.%Get("Status")
+                    
+                    // Try to get message body if available
+                    Set bodyClass = resultSet.%Get("MessageBodyClassname")
+                    Set bodyId = resultSet.%Get("MessageBodyId")
+                    If (bodyClass '= "") && (bodyId '= "") {
+                        Try {
+                            Set bodyObj = $CLASSMETHOD(bodyClass, "%OpenId", bodyId)
+                            If $IsObject(bodyObj) {
+                                // For string requests/responses, get the string value
+                                If $Method(bodyObj, "%IsA", "Ens.StringRequest") || $Method(bodyObj, "%IsA", "Ens.StringResponse") {
+                                    Set entry.MessageBody = bodyObj.StringValue
+                                } Else {
+                                    // For other message types, try to get a string representation
+                                    Set entry.MessageBody = "Message body of type: " _ bodyClass
+                                }
+                            }
+                        } Catch bodyEx {
+                            Set entry.MessageBody = "Error retrieving message body: " _ bodyEx.DisplayString()
+                        }
+                    }
+                    
+                    Do messageEntries.%Push(entry)
+                    Set messageCount = messageCount + 1
+                }
+            }
+            
+            // If includeLogEntries is enabled, also get log entries for the same session/timeframe
+            If includeLogEntries && $$$ISOK(tSC) {
+                Set logSql = "SELECT TOP ? ID, TimeLogged, Type, Job, Session, SourceClass, SourceMethod, Text FROM Ens_Util.Log"
+                Set logConditions = ""
+                Set logParams = ""
+                
+                If (sessionId '= "") {
+                    Set logConditions = logConditions _ " Session = ?"
+                    Set logParams = $LB(maxEntries, sessionId)
+                } Else {
+                    Set logParams = $LB(maxEntries)
+                }
+                
+                If (sinceTime '= "") {
+                    If (logConditions '= "") Set logConditions = logConditions _ " AND"
+                    Set logConditions = logConditions _ " TimeLogged >= ?"
+                    If (sessionId '= "") {
+                        Set logParams = $LB(maxEntries, sessionId, sinceTime)
+                    } Else {
+                        Set logParams = $LB(maxEntries, sinceTime)
+                    }
+                }
+                
+                If (logConditions '= "") {
+                    Set logSql = logSql _ " WHERE" _ logConditions
+                }
+                
+                Set logSql = logSql _ " ORDER BY TimeLogged DESC"
+                
+                Set logStatement = ##class(%SQL.Statement).%New()
+                Set tSC = logStatement.%Prepare(logSql)
+                If $$$ISOK(tSC) {
+                    Set logResultSet = logStatement.%Execute(logParams...)
+                    
+                    While logResultSet.%Next() {
+                        Set logEntry = ##class(%DynamicObject).%New()
+                        Set logEntry.ID = logResultSet.%Get("ID")
+                        Set logEntry.TimeLogged = logResultSet.%Get("TimeLogged")
+                        Set logEntry.Type = logResultSet.%Get("Type")
+                        Set logEntry.Job = logResultSet.%Get("Job")
+                        Set logEntry.Session = logResultSet.%Get("Session")
+                        Set logEntry.SourceClass = logResultSet.%Get("SourceClass")
+                        Set logEntry.SourceMethod = logResultSet.%Get("SourceMethod")
+                        Set logEntry.Text = logResultSet.%Get("Text")
+                        
+                        Do logEntries.%Push(logEntry)
+                        Set logCount = logCount + 1
+                    }
+                }
+            }
+            
+            Set result = "Successfully exported " _ messageCount _ " message entries"
+            If includeLogEntries {
+                Set result = result _ " and " _ logCount _ " log entries"
+            }
+            Set action = "exported"
+            
+        } Catch ex {
+            Set success = 0
+            Set error = ex.DisplayString()
+            Set action = "failed"
+        }
+        
+        // Build response
+        Set response = ##class(%DynamicObject).%New()
+        Set response.success = success
+        Set response.api = "Api.MCPInterop"
+        Set response.step = "Step 6.7 - Export Message Trace"
+        Set response.timestamp = $ZDATETIME($HOROLOG, 3)
+        Set response.namespace = $NAMESPACE
+        Set response.result = result
+        Set response.action = action
+        Set response.maxEntries = maxEntries
+        Set response.messageCount = messageCount
+        Set response.messageEntries = messageEntries
+        
+        If includeLogEntries {
+            Set response.includeLogEntries = includeLogEntries
+            Set response.logCount = logCount
+            Set response.logEntries = logEntries
+        }
+        
+        If (sessionId '= "") {
+            Set response.sessionId = sessionId
+        }
+        
+        If (sinceTime '= "") {
+            Set response.sinceTime = sinceTime
+        }
+        
+        If (error '= "") {
+            Set response.error = error
+        }
+        
+        Write response.%ToJSON()
+        
+    } Catch ex {
+        Set error = ##class(%DynamicObject).%New()
+        Set error.success = 0
+        Set error.api = "Api.MCPInterop"
+        Set error.error = ex.DisplayString()
+        Set error.timestamp = $ZDATETIME($HOROLOG, 3)
+        Set error.step = "Step 6.7 - Export Message Trace"
         
         Write error.%ToJSON()
     }

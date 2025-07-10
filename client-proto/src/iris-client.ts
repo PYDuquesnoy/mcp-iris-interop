@@ -541,6 +541,155 @@ export class IrisClient {
     return response.data;
   }
 
+  /**
+   * Stop the current production
+   * Step 6.4 functionality
+   */
+  async stopProduction(timeout?: number, force?: boolean): Promise<any> {
+    const url = `${this.buildProductionApiUrl()}/stop`;
+    
+    const payload = {
+      timeout: timeout || 10,
+      force: force ? 1 : 0
+    };
+    
+    const response = await this.axios.request({
+      method: 'POST',
+      url,
+      data: payload,
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      validateStatus: (status) => status < 504
+    });
+
+    if (response.status >= 400) {
+      throw new Error(`Stop Production API request failed: ${response.status} ${response.statusText}`);
+    }
+
+    return response.data;
+  }
+
+  /**
+   * Clean the current production
+   * Step 6.4 functionality
+   */
+  async cleanProduction(killAppDataToo?: boolean): Promise<any> {
+    const url = `${this.buildProductionApiUrl()}/clean`;
+    
+    const payload = {
+      killAppDataToo: killAppDataToo ? 1 : 0
+    };
+    
+    const response = await this.axios.request({
+      method: 'POST',
+      url,
+      data: payload,
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      validateStatus: (status) => status < 504
+    });
+
+    if (response.status >= 400) {
+      throw new Error(`Clean Production API request failed: ${response.status} ${response.statusText}`);
+    }
+
+    return response.data;
+  }
+
+  /**
+   * Use the Testing Service to call a Business Process or Business Operation
+   * Step 6.5 functionality
+   */
+  async testService(target: string, requestClass: string, requestData?: string, syncCall?: boolean): Promise<any> {
+    const url = `${this.buildProductionApiUrl()}/test-service`;
+    
+    const payload = {
+      target: target,
+      requestClass: requestClass,
+      requestData: requestData || "",
+      syncCall: syncCall !== false ? 1 : 0
+    };
+    
+    const response = await this.axios.request({
+      method: 'POST',
+      url,
+      data: payload,
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      validateStatus: (status) => status < 504
+    });
+
+    if (response.status >= 400) {
+      throw new Error(`Test Service API request failed: ${response.status} ${response.statusText}`);
+    }
+
+    return response.data;
+  }
+
+  /**
+   * Export Event Log entries
+   * Step 6.6 functionality
+   */
+  async exportEventLog(maxEntries?: number, sessionId?: string, sinceTime?: string): Promise<any> {
+    const url = `${this.buildProductionApiUrl()}/event-log`;
+    
+    const payload = {
+      maxEntries: maxEntries || 100,
+      sessionId: sessionId || "",
+      sinceTime: sinceTime || ""
+    };
+    
+    const response = await this.axios.request({
+      method: 'POST',
+      url,
+      data: payload,
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      validateStatus: (status) => status < 504
+    });
+
+    if (response.status >= 400) {
+      throw new Error(`Export Event Log API request failed: ${response.status} ${response.statusText}`);
+    }
+
+    return response.data;
+  }
+
+  /**
+   * Export Message Trace entries
+   * Step 6.7 functionality
+   */
+  async exportMessageTrace(maxEntries?: number, sessionId?: string, sinceTime?: string, includeLogEntries?: boolean): Promise<any> {
+    const url = `${this.buildProductionApiUrl()}/message-trace`;
+    
+    const payload = {
+      maxEntries: maxEntries || 100,
+      sessionId: sessionId || "",
+      sinceTime: sinceTime || "",
+      includeLogEntries: includeLogEntries !== false ? 1 : 0
+    };
+    
+    const response = await this.axios.request({
+      method: 'POST',
+      url,
+      data: payload,
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      validateStatus: (status) => status < 504
+    });
+
+    if (response.status >= 400) {
+      throw new Error(`Export Message Trace API request failed: ${response.status} ${response.statusText}`);
+    }
+
+    return response.data;
+  }
+
   // =============================================================================
   // BOOTSTRAP METHODS
   // =============================================================================
