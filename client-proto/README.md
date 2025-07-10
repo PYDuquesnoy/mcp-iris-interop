@@ -230,11 +230,38 @@ The prototype can be tested against the Docker IRIS instance from Step 2:
 2. Verify connectivity: `curl http://localhost:42002/csp/sys/UtilHome.csp`
 3. Run the test suite: `npm run test`
 
+## Execute Command (Step 6.1)
+
+The execute command allows remote ObjectScript code execution:
+
+```bash
+# Simple variable assignment
+npm start execute 'Set x = 10 + 20'
+
+# Using IRIS system variables (note single quotes to prevent shell expansion)
+npm start execute 'Set ^MyGlobal = $HOROLOG'
+npm start execute 'Set timestamp = $ZDATETIME($H, 3)'
+
+# Multiple statements
+npm start execute 'Set a = 5 Set b = 10 Set result = a * b'
+```
+
+### Important: Shell Quoting
+
+When using IRIS system variables like `$H`, `$HOROLOG`, etc., use **single quotes** to prevent shell variable expansion:
+
+❌ **Wrong**: `npm start execute "Set ^Test = $H"`  (shell will try to expand $H)
+✅ **Correct**: `npm start execute 'Set ^Test = $H'` (passed literally to IRIS)
+
+Alternative: Escape the dollar sign with double quotes:
+✅ `npm start execute "Set ^Test = \$H"`
+
 ## Next Steps
 
 This prototype provides the foundation for:
 - Step 4: Extended class management operations
 - Step 5: Interoperability REST API development
+- Step 6: Production management functions
 - Step 7: MCP server implementation
 
 The client can be easily extended with additional Atelier API endpoints as needed.
