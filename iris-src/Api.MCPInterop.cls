@@ -18,6 +18,7 @@ XData UrlMap [ XMLNamespace = "http://www.intersystems.com/urlmap" ]
     <Route Url="/list" Method="GET" Call="ListProductions" />
     <Route Url="/status" Method="GET" Call="GetStatus" />
     <Route Url="/test" Method="GET" Call="Test" />
+    <Route Url="/execute" Method="POST" Call="ExecuteCode" />
 </Routes>
 }
 
@@ -133,6 +134,76 @@ ClassMethod Test() As %Status
     Set response.webAppPath = "/api/mcp-interop"
     
     Write response.%ToJSON()
+    
+    Quit $$$OK
+}
+
+/// Execute ObjectScript code and return the result
+/// Step 6.1 functionality - integrated from exec-proto patterns
+ClassMethod ExecuteCode() As %Status
+{
+    Try {
+        // Get JSON body from the request
+        Set body = %request.Content.Read()
+        Set json = ##class(%DynamicObject).%FromJSON(body)
+        
+        // Extract code from request
+        Set code = json.code
+        Set timeout = json.timeout
+        // Set returnValue = json.returnValue  // Simplified for now
+        
+        If (code = "") {
+            Set response = ##class(%DynamicObject).%New()
+            Set response.success = 0
+            Set response.api = "Api.MCPInterop"
+            Set response.error = "No code provided"
+            Set response.timestamp = $ZDATETIME($HOROLOG, 3)
+            Write response.%ToJSON()
+            Return $$$OK
+        }
+        
+        // Execute the ObjectScript code
+        Set result = ""
+        Set success = 1
+        Set error = ""
+        Set returnResult = ""
+        
+        Try {
+            // Execute the ObjectScript code
+            Xecute code
+            Set result = "Code executed successfully"
+        } Catch ex {
+            Set success = 0
+            Set error = ex.DisplayString()
+        }
+        
+        // Build response
+        Set response = ##class(%DynamicObject).%New()
+        Set response.success = success
+        Set response.api = "Api.MCPInterop"
+        Set response.step = "Step 6.1 - Execute Method"
+        Set response.timestamp = $ZDATETIME($HOROLOG, 3)
+        Set response.namespace = $NAMESPACE
+        Set response.result = result
+        Set response.error = error
+        Set response.code = code
+        
+        // If (returnResult '= "") {
+        //     Set response.returnValue = returnResult
+        // }
+        
+        Write response.%ToJSON()
+        
+    } Catch ex {
+        Set error = ##class(%DynamicObject).%New()
+        Set error.success = 0
+        Set error.api = "Api.MCPInterop"
+        Set error.error = ex.DisplayString()
+        Set error.timestamp = $ZDATETIME($HOROLOG, 3)
+        Set error.step = "Step 6.1 - Execute Method"
+        
+        Write error.%ToJSON()
+    }
     
     Quit $$$OK
 }

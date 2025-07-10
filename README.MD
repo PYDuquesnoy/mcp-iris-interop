@@ -188,6 +188,9 @@ npm start prod-check        # Check production API availability
 npm start prod-status       # Get production API status
 npm start prod-list         # List all productions
 npm start prod-test         # Test production API
+
+# Execute ObjectScript code (Step 6.1)
+npm start execute <code>    # Execute ObjectScript code remotely
 ```
 
 **Configuration**: Edit `client-proto/config.json` to specify your IRIS connection details.

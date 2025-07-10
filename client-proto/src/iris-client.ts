@@ -449,4 +449,37 @@ export class IrisClient {
       return false;
     }
   }
+
+  // =============================================================================
+  // EXECUTE METHODS (Step 6.1)
+  // =============================================================================
+
+  /**
+   * Execute ObjectScript code and return the result
+   * Step 6.1 functionality - integrated from exec-proto patterns
+   */
+  async executeCode(code: string, timeout?: number): Promise<any> {
+    const url = `${this.buildProductionApiUrl()}/execute`;
+    
+    const payload = {
+      code: code,
+      timeout: timeout
+    };
+    
+    const response = await this.axios.request({
+      method: 'POST',
+      url,
+      data: payload,
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      validateStatus: (status) => status < 504
+    });
+
+    if (response.status >= 400) {
+      throw new Error(`Execute API request failed: ${response.status} ${response.statusText}`);
+    }
+
+    return response.data;
+  }
 }

@@ -421,7 +421,13 @@ program
       
       if (result.status?.errors?.length > 0) {
         console.error('❌ Compilation failed with errors:');
-        result.status.errors.forEach(error => console.error(`  - ${error}`));
+        result.status.errors.forEach(error => {
+          if (typeof error === 'object') {
+            console.error(`  - ${JSON.stringify(error, null, 2)}`);
+          } else {
+            console.error(`  - ${error}`);
+          }
+        });
         process.exit(1);
       } else {
         console.log(`✅ Successfully compiled ${classNames.length} class(es)`);
@@ -469,7 +475,13 @@ program
       // Check upload result
       if (results.upload.status?.errors?.length > 0) {
         console.error('❌ Upload failed with errors:');
-        results.upload.status.errors.forEach(error => console.error(`  - ${error}`));
+        results.upload.status.errors.forEach(error => {
+          if (typeof error === 'object') {
+            console.error(`  - ${JSON.stringify(error, null, 2)}`);
+          } else {
+            console.error(`  - ${error}`);
+          }
+        });
         process.exit(1);
       }
       
@@ -478,7 +490,13 @@ program
       // Check compilation result
       if (results.compile.status?.errors?.length > 0) {
         console.error('❌ Compilation failed with errors:');
-        results.compile.status.errors.forEach(error => console.error(`  - ${error}`));
+        results.compile.status.errors.forEach(error => {
+          if (typeof error === 'object') {
+            console.error(`  - ${JSON.stringify(error, null, 2)}`);
+          } else {
+            console.error(`  - ${error}`);
+          }
+        });
         process.exit(1);
       }
       
@@ -709,6 +727,51 @@ program
       }
     } catch (error) {
       console.error('❌ Error checking production API:', error instanceof Error ? error.message : String(error));
+      process.exit(1);
+    }
+  });
+
+// =============================================================================
+// EXECUTE COMMANDS (Step 6.1)
+// =============================================================================
+
+program
+  .command('execute')
+  .description('Execute ObjectScript code (Step 6.1)')
+  .argument('<code>', 'ObjectScript code to execute')
+  .option('-c, --config <path>', 'Configuration file path')
+  .option('-t, --timeout <ms>', 'Execution timeout in milliseconds')
+  .option('-v, --verbose', 'Verbose output')
+  .action(async (code, options) => {
+    const config = loadConfig(options.config);
+    const client = new IrisClient(config);
+    
+    verboseLog(`Executing ObjectScript code...`, options.verbose);
+    verboseLog(`Code: ${code}`, options.verbose);
+    if (options.timeout) verboseLog(`Timeout: ${options.timeout}ms`, options.verbose);
+    
+    try {
+      const result = await client.executeCode(code, options.timeout);
+      
+      if (result.success === 1) {
+        console.log('✅ Code executed successfully');
+        console.log(`  Result: ${result.result}`);
+        
+        if (result.returnValue !== undefined) {
+          console.log(`  Return Value: ${result.returnValue}`);
+        }
+        
+        if (options.verbose) {
+          console.log('\nFull Response:');
+          console.log(JSON.stringify(result, null, 2));
+        }
+      } else {
+        console.log('❌ Code execution failed');
+        console.log(`  Error: ${result.error}`);
+        process.exit(1);
+      }
+    } catch (error) {
+      console.error('❌ Error executing code:', error instanceof Error ? error.message : String(error));
       process.exit(1);
     }
   });
