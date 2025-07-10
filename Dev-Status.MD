@@ -64,6 +64,23 @@
   - ✅ Successfully tested end-to-end functionality against Docker IRIS instance
   - ⚠️ List endpoint has ObjectScript syntax issues but infrastructure is complete
 
+### 📋 Legacy Classes Collection Enhancement
+- **Status**: Completed
+- **Date**: 2025-07-10
+- **Details**:
+  - ✅ Investigated missing Ens/EnsLib classes from legacy/cacheensdemo directory
+  - ✅ Analyzed Atelier API source code (%Api.Atelier.v1.cls) for mapped class access
+  - ✅ Discovered classes are mapped from ENSLIB database, not directly accessible via ENSDEMO
+  - ✅ Found classes available in IRISAPP namespace instead of ENSDEMO
+  - ✅ Created download-enslib-from-irisapp.sh script for complete framework download
+  - ✅ Successfully downloaded 1,276 Ens/EnsLib/EnsPortal classes (14MB) to legacy/ensLib/
+  - ✅ Verified critical Step 6.5 classes are available:
+    - EnsLib.Testing.Service.cls (2,117 bytes)
+    - EnsLib.Testing.Request.cls (2,211 bytes)
+    - EnsPortal.TestingService.cls (8,140 bytes)
+  - ✅ Cleaned up 4 failed/unused download scripts
+  - ✅ Updated documentation (README.md, WorkLog.MD, Dev-Status.MD)
+
 ### ⏳ Step 6.1: Merge and Execute Method Functionality
 - **Status**: Pending
 - **Requirements**:

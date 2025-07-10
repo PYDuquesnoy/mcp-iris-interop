@@ -45,6 +45,28 @@
 
 **Status:** Completed - Step 4 fully implemented and tested
 
+## Ens/EnsLib Classes Download Investigation
+**Date:** 2025-07-10  
+**User Request:** "The legacy/cacheensdemo directory is missing a lot of IRIS classes which are mapped from the ENSLIB database but visible in the ENSDEMO namespace... Check the Script, and see why the classes are missing in legacy/cacheensdemo directory."
+
+**Claude Investigation:** 
+- Analyzed the download-ensdemo-non-percent.sh script which correctly downloaded 203 non-percent classes
+- Discovered Ens/EnsLib classes are mapped from ENSLIB database, not accessible via ENSDEMO namespace through Atelier API
+- Investigated Atelier API source code in legacy/system/%Api.Atelier.v1.cls 
+- Analyzed VSCode extension source for mapped class handling approaches
+- Found that ENSDEMO namespace was no longer mounted, but classes available in IRISAPP
+
+**Solution Implemented:**
+- Created download-enslib-from-irisapp.sh script to download from IRISAPP namespace
+- Successfully downloaded 1,276 Ens/EnsLib/EnsPortal classes (14MB) to legacy/ensLib/
+- Verified critical classes for Step 6.5 are present:
+  - EnsLib.Testing.Service.cls (2,117 bytes)
+  - EnsLib.Testing.Request.cls (2,211 bytes)  
+  - EnsPortal.TestingService.cls (8,140 bytes)
+- Cleaned up 4 failed/unused download scripts
+
+**Status:** Completed - Complete Interoperability framework classes now available
+
 ## Step 4 Completion
 **Date:** 2025-07-07  
 **Deliverables:**

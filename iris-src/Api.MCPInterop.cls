@@ -1,5 +1,8 @@
 /// API MCP Interoperability REST API for Main Project Step 5
 /// Provides REST endpoints for interoperability production management
+
+Include Ensemble
+
 Class Api.MCPInterop Extends %CSP.REST
 {
 
@@ -30,15 +33,30 @@ ClassMethod ListProductions() As %Status
         
         If ensembleAvailable {
             // Use Ens.Director to get production summary
-            Set productions = ##class(Ens.Director).GetProductionSummary()
-            While productions.%Next() {
+            // GetProductionSummary expects ByRef parameter and returns status
+            Set tSC = ##class(Ens.Director).GetProductionSummary(.tInfo, $NAMESPACE)
+            If $$$ISOK(tSC) {
+                // tInfo contains production data as subscripted array
+                // Format: tInfo(productionName) = $LB(status, lastStartTime, lastStopTime, autoStart)
+                Set productionName = ""
+                For {
+                    Set productionName = $ORDER(tInfo(productionName))
+                    Quit:productionName=""
+                    
+                    Set prod = ##class(%DynamicObject).%New()
+                    Set prod.Name = productionName
+                    Set productionData = tInfo(productionName)
+                    Set prod.Status = $LIST(productionData, 1)
+                    Set prod.LastStartTime = $LIST(productionData, 2)
+                    Set prod.LastStopTime = $LIST(productionData, 3)
+                    Set prod.AutoStart = $LIST(productionData, 4)
+                    Do result.%Push(prod)
+                }
+            } Else {
+                // Error getting production summary
                 Set prod = ##class(%DynamicObject).%New()
-                Set prod.Name = productions.%Get("Name")
-                Set prod.Status = productions.%Get("Status") 
-                Set prod.LastStartTime = productions.%Get("LastStartTime")
-                Set prod.LastStopTime = productions.%Get("LastStopTime")
-                Set prod.State = productions.%Get("State")
-                Set prod.AutoStart = productions.%Get("AutoStart")
+                Set prod.Name = "Error retrieving productions"
+                Set prod.Status = "Error: " _ $SYSTEM.Status.GetErrorText(tSC)
                 Do result.%Push(prod)
             }
         } Else {

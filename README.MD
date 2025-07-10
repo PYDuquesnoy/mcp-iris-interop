@@ -61,6 +61,7 @@ mcp-iris-interop/
 │   ├── README.md          # Legacy classes overview
 │   ├── cacheensdemo/      # ENSDEMO namespace classes (203 interoperability samples)
 │   │   └── README.md      # ENSDEMO classes documentation
+│   ├── ensLib/            # Ens/EnsLib/EnsPortal classes from IRISAPP (1,276 classes, 14MB)
 │   └── system/            # % system classes from SAMPLES namespace (3,458 classes)
 ├── intersystems-iris-dev-template/  # Docker development environment (Step 2)
 │   ├── README.md          # Docker environment setup
@@ -216,6 +217,7 @@ These samples are used by the TypeScript prototype and can be referenced by curl
 ### Sample Collections
 - **[legacy/README.md](legacy/README.md)** - Overview of downloaded IRIS sample classes
 - **[legacy/cacheensdemo/README.md](legacy/cacheensdemo/README.md)** - ENSDEMO interoperability samples (203 classes)
+- **[legacy/ensLib/](legacy/ensLib/)** - Complete Ens/EnsLib/EnsPortal framework (1,276 classes) with Testing Service classes
 
 ### External Components
 - **[intersystems-iris-dev-template/README.md](intersystems-iris-dev-template/README.md)** - Docker development environment setup
@@ -227,6 +229,7 @@ This repository includes comprehensive sample class collections from InterSystem
 
 - **SAMPLES Namespace**: 406 non-% classes (3.0MB) + 3,458 % system classes (47MB)
 - **ENSDEMO Namespace**: 203 non-% interoperability classes (1.2MB)
+- **IRISAPP Namespace**: 1,276 Ens/EnsLib/EnsPortal classes (14MB) - **Complete Interoperability Framework**
 - **Custom Samples**: Upload/download test classes in `iris-samples/`
 
 These collections provide extensive examples for:
