@@ -11,13 +11,13 @@ XData ProductionDefinition
 <Production Name="Demo.Production" TestingEnabled="true" LogGeneralTraceEvents="false">
   <Description>Demo Production for Step 6.2 Testing - Start Production Functionality</Description>
   <ActorPoolSize>2</ActorPoolSize>
-  <Item Name="Demo.FileService" Category="" ClassName="EnsLib.File.InboundAdapter" PoolSize="1" Enabled="true" Foreground="false" Comment="" LogTraceEvents="false" Schedule="">
+  <Item Name="Demo.FileService" Category="" ClassName="Demo.FileService" PoolSize="1" Enabled="true" Foreground="false" Comment="" LogTraceEvents="false" Schedule="">
     <Setting Target="Adapter" Name="FilePath">/home/irisowner/dev/shared/in</Setting>
     <Setting Target="Adapter" Name="FileSpec">*.txt</Setting>
     <Setting Target="Adapter" Name="ArchivePath">/home/irisowner/dev/shared/archive</Setting>
   </Item>
   
-  <Item Name="Demo.FileOperation" Category="" ClassName="EnsLib.File.OutboundAdapter" PoolSize="1" Enabled="true" Foreground="false" Comment="" LogTraceEvents="false" Schedule="">
+  <Item Name="Demo.FileOperation" Category="" ClassName="Demo.FileOperation" PoolSize="1" Enabled="true" Foreground="false" Comment="" LogTraceEvents="false" Schedule="">
     <Setting Target="Adapter" Name="FilePath">/home/irisowner/dev/shared/out</Setting>
   </Item>
 </Production>

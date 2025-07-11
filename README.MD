@@ -62,7 +62,13 @@ mcp-iris-interop/
 │   ├── README.md          # Execution prototype documentation
 │   └── DEPLOYMENT-NOTES.md # Critical deployment patterns and procedures
 ├── iris-samples/          # Sample IRIS classes for testing
-│   └── README.md          # Sample classes documentation
+│   ├── README.md          # Sample classes documentation
+│   ├── csv-to-xml/        # Complete CSV to XML conversion workflow
+│   ├── simple-production-test/  # Basic file passthrough test
+│   ├── demo-components/   # Basic demonstration components
+│   ├── step5-production-api/   # Production API testing
+│   ├── download/          # Downloaded classes for testing
+│   └── upload/            # Test classes for upload validation
 ├── legacy/                # Downloaded sample classes from IRIS
 │   ├── README.md          # Legacy classes overview
 │   ├── cacheensdemo/      # ENSDEMO namespace classes (203 interoperability samples)
@@ -208,7 +214,24 @@ npm start bootstrap-api     # Upload and deploy the production management API
 
 ### Sample Classes (iris-samples/)
 
-The `iris-samples/` directory contains ObjectScript classes for testing upload/download functionality:
+The `iris-samples/` directory contains organized ObjectScript classes for testing various IRIS functionalities:
+
+- **`csv-to-xml/`**: Complete CSV to XML conversion workflow
+  - `CSV.PersonRecord.cls` - Message class for person data
+  - `CSV.FileService.cls` - Business Service for CSV processing
+  - `CSV.XMLFileOperation.cls` - Business Operation for XML output
+  - `CSV.ProcessingProduction.cls` - Production configuration
+  - `sample-people.csv` - Test data file
+
+- **`simple-production-test/`**: Basic file passthrough production
+  - `Test.SimpleProduction.cls` - Simple production for API testing
+
+- **`demo-components/`**: Basic demonstration components
+  - `Demo.FileService.cls` - Basic file input service
+  - `Demo.FileOperation.cls` - Basic file output operation
+
+- **`step5-production-api/`**: Production API testing components
+  - `Sample.Production.Step5.cls` - Sample production for API validation
 
 - **`upload/`**: Sample classes ready for upload to IRIS
   - `Test.Sample.cls` - Basic ObjectScript class with properties and methods
@@ -217,7 +240,7 @@ The `iris-samples/` directory contains ObjectScript classes for testing upload/d
 
 - **`download/`**: Downloaded classes from IRIS for verification
 
-These samples are used by the TypeScript prototype and can be referenced by curl-test scripts for consistent testing.
+These samples demonstrate various IRIS interoperability patterns and are used by the TypeScript prototype for testing.
 
 ## Documentation Index
 

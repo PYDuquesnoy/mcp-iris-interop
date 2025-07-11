@@ -31,7 +31,13 @@ function verboseLog(message, verbose = false) {
 program
     .name('iris-client')
     .description('InterSystems IRIS Client Prototype')
-    .version('1.0.0');
+    .version('1.0.0')
+    .option('--http-verbose', 'Show HTTP request details (method, URL, body)')
+    .hook('preAction', (thisCommand, actionCommand) => {
+    if (thisCommand.opts().httpVerbose) {
+        process.env.HTTP_VERBOSE = 'true';
+    }
+});
 program
     .command('test')
     .description('Test connection to IRIS server')
@@ -1066,6 +1072,61 @@ program
     }
     catch (error) {
         console.error('❌ Error exporting message trace:', error instanceof Error ? error.message : String(error));
+        process.exit(1);
+    }
+});
+program
+    .command('get-message-body')
+    .description('Get individual message body content with full export capabilities')
+    .option('-h, --header-id <id>', 'Message header ID')
+    .option('-c, --body-class <class>', 'Message body class name')
+    .option('-i, --body-id <id>', 'Message body ID')
+    .option('-f, --format <format>', 'Export format: json, xml, raw', 'json')
+    .option('--config <path>', 'Configuration file path')
+    .option('-v, --verbose', 'Verbose output')
+    .action(async (options) => {
+    const config = loadConfig(options.config);
+    const client = new iris_client_1.IrisClient(config);
+    verboseLog('Getting message body...', options.verbose);
+    if (options.headerId)
+        verboseLog(`Header ID: ${options.headerId}`, options.verbose);
+    if (options.bodyClass)
+        verboseLog(`Body Class: ${options.bodyClass}`, options.verbose);
+    if (options.bodyId)
+        verboseLog(`Body ID: ${options.bodyId}`, options.verbose);
+    verboseLog(`Format: ${options.format}`, options.verbose);
+    try {
+        const result = await client.getMessageBody(options.headerId ? parseInt(options.headerId) : undefined, options.bodyClass, options.bodyId, options.format);
+        if (result.success === 1) {
+            console.log('✅ Message body retrieved successfully');
+            console.log(`  Action: ${result.action}`);
+            console.log(`  Body Class: ${result.bodyClass}`);
+            console.log(`  Body ID: ${result.bodyId}`);
+            console.log(`  Format: ${result.format}`);
+            console.log(`  Content Type: ${result.contentType}`);
+            if (result.sourceConfig) {
+                console.log(`  Source: ${result.sourceConfig} -> ${result.targetConfig}`);
+                console.log(`  Time Created: ${result.timeCreated}`);
+            }
+            if (result.messageContent) {
+                console.log('\n📄 Message Content:');
+                console.log('─'.repeat(50));
+                console.log(result.messageContent);
+                console.log('─'.repeat(50));
+            }
+            if (options.verbose) {
+                console.log('\nFull Response:');
+                console.log(JSON.stringify(result, null, 2));
+            }
+        }
+        else {
+            console.log('❌ Message body retrieval failed');
+            console.log(`  Error: ${result.error}`);
+            process.exit(1);
+        }
+    }
+    catch (error) {
+        console.error('❌ Error getting message body:', error instanceof Error ? error.message : String(error));
         process.exit(1);
     }
 });

@@ -77,6 +77,19 @@ export class IrisClient {
     headers?: any
   ): Promise<AtelierResponse<T>> {
     try {
+      const fullUrl = `${this.buildBaseUrl()}${path}`;
+      
+      // Log HTTP details if verbose is enabled
+      if (process.env.HTTP_VERBOSE === 'true') {
+        console.log(`\n[HTTP] ${method} ${fullUrl}`);
+        if (params && Object.keys(params).length > 0) {
+          console.log(`[HTTP] Query Params: ${JSON.stringify(params)}`);
+        }
+        if (data) {
+          console.log(`[HTTP] Request Body: ${JSON.stringify(data, null, 2)}`);
+        }
+      }
+      
       const response: AxiosResponse = await this.axios.request({
         method,
         url: path,
@@ -369,12 +382,22 @@ export class IrisClient {
   /**
    * Make a request to the production management API
    */
-  private async productionApiRequest(method: string, endpoint: string): Promise<any> {
+  private async productionApiRequest(method: string, endpoint: string, data?: any): Promise<any> {
     const url = `${this.buildProductionApiUrl()}${endpoint}`;
+    
+    // Log HTTP details if verbose is enabled
+    if (process.env.HTTP_VERBOSE === 'true') {
+      console.log(`\n[HTTP] ${method} ${url}`);
+      if (data) {
+        console.log(`[HTTP] Request Body: ${JSON.stringify(data, null, 2)}`);
+      }
+    }
     
     const response = await this.axios.request({
       method,
       url,
+      data,
+      headers: data ? { 'Content-Type': 'application/json' } : undefined,
       validateStatus: (status) => status < 504
     });
 
@@ -459,28 +482,12 @@ export class IrisClient {
    * Step 6.1 functionality - integrated from exec-proto patterns
    */
   async executeCode(code: string, timeout?: number): Promise<any> {
-    const url = `${this.buildProductionApiUrl()}/execute`;
-    
     const payload = {
       code: code,
       timeout: timeout
     };
     
-    const response = await this.axios.request({
-      method: 'POST',
-      url,
-      data: payload,
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      validateStatus: (status) => status < 504
-    });
-
-    if (response.status >= 400) {
-      throw new Error(`Execute API request failed: ${response.status} ${response.statusText}`);
-    }
-
-    return response.data;
+    return this.productionApiRequest('POST', '/execute', payload);
   }
 
   /**
@@ -488,28 +495,12 @@ export class IrisClient {
    * Step 6.2 functionality
    */
   async startProduction(productionName?: string, timeout?: number): Promise<any> {
-    const url = `${this.buildProductionApiUrl()}/start`;
-    
     const payload = {
       productionName: productionName || "",
       timeout: timeout || 30
     };
     
-    const response = await this.axios.request({
-      method: 'POST',
-      url,
-      data: payload,
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      validateStatus: (status) => status < 504
-    });
-
-    if (response.status >= 400) {
-      throw new Error(`Start Production API request failed: ${response.status} ${response.statusText}`);
-    }
-
-    return response.data;
+    return this.productionApiRequest('POST', '/start', payload);
   }
 
   /**
@@ -517,28 +508,12 @@ export class IrisClient {
    * Step 6.3 functionality - used when Business Services, Processes, or Operations are added/changed
    */
   async updateProduction(timeout?: number, force?: boolean): Promise<any> {
-    const url = `${this.buildProductionApiUrl()}/update`;
-    
     const payload = {
       timeout: timeout || 10,
       force: force ? 1 : 0
     };
     
-    const response = await this.axios.request({
-      method: 'POST',
-      url,
-      data: payload,
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      validateStatus: (status) => status < 504
-    });
-
-    if (response.status >= 400) {
-      throw new Error(`Update Production API request failed: ${response.status} ${response.statusText}`);
-    }
-
-    return response.data;
+    return this.productionApiRequest('POST', '/update', payload);
   }
 
   /**
@@ -546,28 +521,12 @@ export class IrisClient {
    * Step 6.4 functionality
    */
   async stopProduction(timeout?: number, force?: boolean): Promise<any> {
-    const url = `${this.buildProductionApiUrl()}/stop`;
-    
     const payload = {
       timeout: timeout || 10,
       force: force ? 1 : 0
     };
     
-    const response = await this.axios.request({
-      method: 'POST',
-      url,
-      data: payload,
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      validateStatus: (status) => status < 504
-    });
-
-    if (response.status >= 400) {
-      throw new Error(`Stop Production API request failed: ${response.status} ${response.statusText}`);
-    }
-
-    return response.data;
+    return this.productionApiRequest('POST', '/stop', payload);
   }
 
   /**
@@ -575,27 +534,11 @@ export class IrisClient {
    * Step 6.4 functionality
    */
   async cleanProduction(killAppDataToo?: boolean): Promise<any> {
-    const url = `${this.buildProductionApiUrl()}/clean`;
-    
     const payload = {
       killAppDataToo: killAppDataToo ? 1 : 0
     };
     
-    const response = await this.axios.request({
-      method: 'POST',
-      url,
-      data: payload,
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      validateStatus: (status) => status < 504
-    });
-
-    if (response.status >= 400) {
-      throw new Error(`Clean Production API request failed: ${response.status} ${response.statusText}`);
-    }
-
-    return response.data;
+    return this.productionApiRequest('POST', '/clean', payload);
   }
 
   /**
@@ -603,8 +546,6 @@ export class IrisClient {
    * Step 6.5 functionality
    */
   async testService(target: string, requestClass: string, requestData?: string, syncCall?: boolean): Promise<any> {
-    const url = `${this.buildProductionApiUrl()}/test-service`;
-    
     const payload = {
       target: target,
       requestClass: requestClass,
@@ -612,21 +553,7 @@ export class IrisClient {
       syncCall: syncCall !== false ? 1 : 0
     };
     
-    const response = await this.axios.request({
-      method: 'POST',
-      url,
-      data: payload,
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      validateStatus: (status) => status < 504
-    });
-
-    if (response.status >= 400) {
-      throw new Error(`Test Service API request failed: ${response.status} ${response.statusText}`);
-    }
-
-    return response.data;
+    return this.productionApiRequest('POST', '/test-service', payload);
   }
 
   /**
@@ -634,29 +561,13 @@ export class IrisClient {
    * Step 6.6 functionality
    */
   async exportEventLog(maxEntries?: number, sessionId?: string, sinceTime?: string): Promise<any> {
-    const url = `${this.buildProductionApiUrl()}/event-log`;
-    
     const payload = {
       maxEntries: maxEntries || 100,
       sessionId: sessionId || "",
       sinceTime: sinceTime || ""
     };
     
-    const response = await this.axios.request({
-      method: 'POST',
-      url,
-      data: payload,
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      validateStatus: (status) => status < 504
-    });
-
-    if (response.status >= 400) {
-      throw new Error(`Export Event Log API request failed: ${response.status} ${response.statusText}`);
-    }
-
-    return response.data;
+    return this.productionApiRequest('POST', '/event-log', payload);
   }
 
   /**
@@ -664,8 +575,6 @@ export class IrisClient {
    * Step 6.7 functionality
    */
   async exportMessageTrace(maxEntries?: number, sessionId?: string, sinceTime?: string, includeLogEntries?: boolean): Promise<any> {
-    const url = `${this.buildProductionApiUrl()}/message-trace`;
-    
     const payload = {
       maxEntries: maxEntries || 100,
       sessionId: sessionId || "",
@@ -673,21 +582,22 @@ export class IrisClient {
       includeLogEntries: includeLogEntries !== false ? 1 : 0
     };
     
-    const response = await this.axios.request({
-      method: 'POST',
-      url,
-      data: payload,
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      validateStatus: (status) => status < 504
-    });
+    return this.productionApiRequest('POST', '/message-trace', payload);
+  }
 
-    if (response.status >= 400) {
-      throw new Error(`Export Message Trace API request failed: ${response.status} ${response.statusText}`);
-    }
-
-    return response.data;
+  /**
+   * Get individual message body content
+   * Enhanced functionality for downloading full message bodies
+   */
+  async getMessageBody(messageHeaderId?: number, bodyClass?: string, bodyId?: string, format?: string): Promise<any> {
+    const payload = {
+      messageHeaderId: messageHeaderId || "",
+      bodyClass: bodyClass || "",
+      bodyId: bodyId || "",
+      format: format || "json"
+    };
+    
+    return this.productionApiRequest('POST', '/message-body', payload);
   }
 
   // =============================================================================

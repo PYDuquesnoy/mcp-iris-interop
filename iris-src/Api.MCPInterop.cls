@@ -26,6 +26,7 @@ XData UrlMap [ XMLNamespace = "http://www.intersystems.com/urlmap" ]
     <Route Url="/test-service" Method="POST" Call="TestService" />
     <Route Url="/event-log" Method="POST" Call="ExportEventLog" />
     <Route Url="/message-trace" Method="POST" Call="ExportMessageTrace" />
+    <Route Url="/message-body" Method="POST" Call="GetMessageBody" />
 </Routes>
 }
 
@@ -282,10 +283,6 @@ ClassMethod StartProduction() As %Status
         Set action = "started"
         
         Try {
-            // Redirect output to capture any device output during start
-            Set oldIORedirect = $IO
-            Open "NUL" Use "NUL"
-            
             If (productionName = "") {
                 // Start default/last production
                 Set tSC = ##class(Ens.Director).StartProduction()
@@ -297,9 +294,6 @@ ClassMethod StartProduction() As %Status
                 Set result = "Started production: " _ productionName
                 Set action = "started_specific"
             }
-            
-            // Restore output
-            Use oldIORedirect Close "NUL"
             
             If $$$ISERR(tSC) {
                 Set success = 0
@@ -315,8 +309,6 @@ ClassMethod StartProduction() As %Status
             }
             
         } Catch ex {
-            // Restore output in case of exception
-            Try { Use oldIORedirect Close "NUL" } Catch {}
             Set success = 0
             Set error = ex.DisplayString()
             Set action = "failed"
@@ -407,15 +399,8 @@ ClassMethod UpdateProduction() As %Status
         Set action = "updated"
         
         Try {
-            // Redirect output to capture any device output during update
-            Set oldIORedirect = $IO
-            Open "NUL" Use "NUL"
-            
             // Call Ens.Director.UpdateProduction with timeout and force parameters
             Set tSC = ##class(Ens.Director).UpdateProduction(timeout, force)
-            
-            // Restore output
-            Use oldIORedirect Close "NUL"
             
             If $$$ISOK(tSC) {
                 Set result = "Production '" _ currentProd _ "' updated successfully"
@@ -427,8 +412,6 @@ ClassMethod UpdateProduction() As %Status
             }
             
         } Catch ex {
-            // Restore output in case of exception
-            Try { Use oldIORedirect Close "NUL" } Catch {}
             Set success = 0
             Set error = ex.DisplayString()
             Set action = "failed"
@@ -520,15 +503,8 @@ ClassMethod StopProduction() As %Status
         Set action = "stopped"
         
         Try {
-            // Redirect output to capture any device output during stop
-            Set oldIORedirect = $IO
-            Open "NUL" Use "NUL"
-            
             // Call Ens.Director.StopProduction with timeout and force parameters
             Set tSC = ##class(Ens.Director).StopProduction(timeout, force)
-            
-            // Restore output
-            Use oldIORedirect Close "NUL"
             
             If $$$ISOK(tSC) {
                 Set result = "Production '" _ currentProd _ "' stopped successfully"
@@ -540,8 +516,6 @@ ClassMethod StopProduction() As %Status
             }
             
         } Catch ex {
-            // Restore output in case of exception
-            Try { Use oldIORedirect Close "NUL" } Catch {}
             Set success = 0
             Set error = ex.DisplayString()
             Set action = "failed"
@@ -616,15 +590,8 @@ ClassMethod CleanProduction() As %Status
         Set action = "cleaned"
         
         Try {
-            // Redirect output to capture any device output during clean
-            Set oldIORedirect = $IO
-            Open "NUL" Use "NUL"
-            
             // Call Ens.Director.CleanProduction
             Set tSC = ##class(Ens.Director).CleanProduction(killAppDataToo)
-            
-            // Restore output
-            Use oldIORedirect Close "NUL"
             
             If $$$ISOK(tSC) {
                 Set result = "Production cleaned successfully"
@@ -636,8 +603,6 @@ ClassMethod CleanProduction() As %Status
             }
             
         } Catch ex {
-            // Restore output in case of exception
-            Try { Use oldIORedirect Close "NUL" } Catch {}
             Set success = 0
             Set error = ex.DisplayString()
             Set action = "failed"
@@ -768,10 +733,6 @@ ClassMethod TestService() As %Status
         Set responseData = ""
         
         Try {
-            // Redirect output to capture any device output during test
-            Set oldIORedirect = $IO
-            Open "NUL" Use "NUL"
-            
             // Create the request object
             Set requestObj = $CLASSMETHOD(requestClass, "%New")
             If '$IsObject(requestObj) {
@@ -810,12 +771,7 @@ ClassMethod TestService() As %Status
                 }
             }
             
-            // Restore output
-            Use oldIORedirect Close "NUL"
-            
         } Catch ex {
-            // Restore output in case of exception
-            Try { Use oldIORedirect Close "NUL" } Catch {}
             Set success = 0
             Set error = ex.DisplayString()
             Set action = "failed"
@@ -944,29 +900,17 @@ ClassMethod ExportEventLog() As %Status
         }
         
         // Build SQL query based on parameters
-        Set sql = "SELECT TOP ? ID, TimeLogged, Type, Job, Session, SourceClass, SourceMethod, Text FROM Ens_Util.Log"
+        Set sql = "SELECT TOP ? ID, TimeLogged, Type, Job, SessionId, SourceClass, SourceMethod, Text FROM Ens_Util.Log"
         Set conditions = ""
-        Set params = ""
-        Set paramCount = 1
         
         // Add conditions based on parameters
         If (sessionId '= "") {
-            Set conditions = conditions _ " Session = ?"
-            Set params = $LB(maxEntries, sessionId)
-            Set paramCount = paramCount + 1
-        } Else {
-            Set params = $LB(maxEntries)
+            Set conditions = conditions _ " SessionId = ?"
         }
         
         If (sinceTime '= "") {
             If (conditions '= "") Set conditions = conditions _ " AND"
             Set conditions = conditions _ " TimeLogged >= ?"
-            If (sessionId '= "") {
-                Set params = $LB(maxEntries, sessionId, sinceTime)
-            } Else {
-                Set params = $LB(maxEntries, sinceTime)
-            }
-            Set paramCount = paramCount + 1
         }
         
         If (conditions '= "") {
@@ -990,7 +934,16 @@ ClassMethod ExportEventLog() As %Status
                 Set success = 0
                 Set error = "Failed to prepare SQL: " _ $SYSTEM.Status.GetErrorText(tSC)
             } Else {
-                Set resultSet = statement.%Execute(params...)
+                // Execute with proper parameters based on conditions
+                If (sessionId '= "") && (sinceTime '= "") {
+                    Set resultSet = statement.%Execute(maxEntries, sessionId, sinceTime)
+                } ElseIf (sessionId '= "") {
+                    Set resultSet = statement.%Execute(maxEntries, sessionId)
+                } ElseIf (sinceTime '= "") {
+                    Set resultSet = statement.%Execute(maxEntries, sinceTime)
+                } Else {
+                    Set resultSet = statement.%Execute(maxEntries)
+                }
                 
                 While resultSet.%Next() {
                     Set entry = ##class(%DynamicObject).%New()
@@ -998,7 +951,7 @@ ClassMethod ExportEventLog() As %Status
                     Set entry.TimeLogged = resultSet.%Get("TimeLogged")
                     Set entry.Type = resultSet.%Get("Type")
                     Set entry.Job = resultSet.%Get("Job")
-                    Set entry.Session = resultSet.%Get("Session")
+                    Set entry.SessionId = resultSet.%Get("SessionId")
                     Set entry.SourceClass = resultSet.%Get("SourceClass")
                     Set entry.SourceMethod = resultSet.%Get("SourceMethod")
                     Set entry.Text = resultSet.%Get("Text")
@@ -1105,24 +1058,15 @@ ClassMethod ExportMessageTrace() As %Status
             // Build SQL query for message headers
             Set sql = "SELECT TOP ? ID, TimeCreated, SessionId, MessageBodyClassname, MessageBodyId, SourceConfigName, TargetConfigName, Type, Status FROM Ens.MessageHeader"
             Set conditions = ""
-            Set params = ""
             
             // Add conditions based on parameters
             If (sessionId '= "") {
                 Set conditions = conditions _ " SessionId = ?"
-                Set params = $LB(maxEntries, sessionId)
-            } Else {
-                Set params = $LB(maxEntries)
             }
             
             If (sinceTime '= "") {
                 If (conditions '= "") Set conditions = conditions _ " AND"
                 Set conditions = conditions _ " TimeCreated >= ?"
-                If (sessionId '= "") {
-                    Set params = $LB(maxEntries, sessionId, sinceTime)
-                } Else {
-                    Set params = $LB(maxEntries, sinceTime)
-                }
             }
             
             If (conditions '= "") {
@@ -1138,7 +1082,16 @@ ClassMethod ExportMessageTrace() As %Status
                 Set success = 0
                 Set error = "Failed to prepare message headers SQL: " _ $SYSTEM.Status.GetErrorText(tSC)
             } Else {
-                Set resultSet = statement.%Execute(params...)
+                // Execute with proper parameters based on conditions
+                If (sessionId '= "") && (sinceTime '= "") {
+                    Set resultSet = statement.%Execute(maxEntries, sessionId, sinceTime)
+                } ElseIf (sessionId '= "") {
+                    Set resultSet = statement.%Execute(maxEntries, sessionId)
+                } ElseIf (sinceTime '= "") {
+                    Set resultSet = statement.%Execute(maxEntries, sinceTime)
+                } Else {
+                    Set resultSet = statement.%Execute(maxEntries)
+                }
                 
                 While resultSet.%Next() {
                     Set entry = ##class(%DynamicObject).%New()
@@ -1159,17 +1112,53 @@ ClassMethod ExportMessageTrace() As %Status
                         Try {
                             Set bodyObj = $CLASSMETHOD(bodyClass, "%OpenId", bodyId)
                             If $IsObject(bodyObj) {
-                                // For string requests/responses, get the string value
+                                // Extract message content based on type
                                 If $Method(bodyObj, "%IsA", "Ens.StringRequest") || $Method(bodyObj, "%IsA", "Ens.StringResponse") {
+                                    // For string requests/responses, get the string value
                                     Set entry.MessageBody = bodyObj.StringValue
+                                    Set entry.MessageBodyType = "string"
+                                } ElseIf $Method(bodyObj, "%IsA", "Ens.StreamContainer") {
+                                    // For stream containers, read the stream content
+                                    Set stream = bodyObj.Stream
+                                    If $IsObject(stream) {
+                                        Do stream.Rewind()
+                                        Set content = ""
+                                        While 'stream.AtEnd {
+                                            Set content = content _ stream.Read(32000)
+                                        }
+                                        Set entry.MessageBody = content
+                                        Set entry.MessageBodyType = "stream"
+                                    } Else {
+                                        Set entry.MessageBody = "Stream not available"
+                                        Set entry.MessageBodyType = "stream_error"
+                                    }
                                 } Else {
-                                    // For other message types, try to get a string representation
-                                    Set entry.MessageBody = "Message body of type: " _ bodyClass
+                                    // For other message types, use XML export (standard IRIS capability)
+                                    Try {
+                                        Set xmlString = ""
+                                        Do bodyObj.%XMLExportToString(.xmlString)
+                                        Set entry.MessageBody = xmlString
+                                        Set entry.MessageBodyType = "xml"
+                                    } Catch xmlEx {
+                                        // If XML export fails, provide basic info
+                                        Set entry.MessageBody = "Message body of class: " _ bodyClass _ " (ID: " _ bodyId _ ")"
+                                        Set entry.MessageBodyType = "basic_info"
+                                    }
                                 }
+                                
+                                // Also include class and ID for reference
+                                Set entry.MessageBodyClass = bodyClass
+                                Set entry.MessageBodyId = bodyId
+                            } Else {
+                                Set entry.MessageBody = "Could not open message body object"
+                                Set entry.MessageBodyType = "open_error"
                             }
                         } Catch bodyEx {
                             Set entry.MessageBody = "Error retrieving message body: " _ bodyEx.DisplayString()
+                            Set entry.MessageBodyType = "retrieve_error"
                         }
+                    } Else {
+                        Set entry.MessageBodyType = "no_body"
                     }
                     
                     Do messageEntries.%Push(entry)
@@ -1179,12 +1168,12 @@ ClassMethod ExportMessageTrace() As %Status
             
             // If includeLogEntries is enabled, also get log entries for the same session/timeframe
             If includeLogEntries && $$$ISOK(tSC) {
-                Set logSql = "SELECT TOP ? ID, TimeLogged, Type, Job, Session, SourceClass, SourceMethod, Text FROM Ens_Util.Log"
+                Set logSql = "SELECT TOP ? ID, TimeLogged, Type, Job, SessionId, SourceClass, SourceMethod, Text FROM Ens_Util.Log"
                 Set logConditions = ""
                 Set logParams = ""
                 
                 If (sessionId '= "") {
-                    Set logConditions = logConditions _ " Session = ?"
+                    Set logConditions = logConditions _ " SessionId = ?"
                     Set logParams = $LB(maxEntries, sessionId)
                 } Else {
                     Set logParams = $LB(maxEntries)
@@ -1217,7 +1206,7 @@ ClassMethod ExportMessageTrace() As %Status
                         Set logEntry.TimeLogged = logResultSet.%Get("TimeLogged")
                         Set logEntry.Type = logResultSet.%Get("Type")
                         Set logEntry.Job = logResultSet.%Get("Job")
-                        Set logEntry.Session = logResultSet.%Get("Session")
+                        Set logEntry.SessionId = logResultSet.%Get("SessionId")
                         Set logEntry.SourceClass = logResultSet.%Get("SourceClass")
                         Set logEntry.SourceMethod = logResultSet.%Get("SourceMethod")
                         Set logEntry.Text = logResultSet.%Get("Text")
@@ -1280,6 +1269,173 @@ ClassMethod ExportMessageTrace() As %Status
         Set error.error = ex.DisplayString()
         Set error.timestamp = $ZDATETIME($HOROLOG, 3)
         Set error.step = "Step 6.7 - Export Message Trace"
+        
+        Write error.%ToJSON()
+    }
+    
+    Quit $$$OK
+}
+
+/// Get individual message body content
+/// Dedicated endpoint for downloading message bodies with full content
+ClassMethod GetMessageBody() As %Status
+{
+    Try {
+        // Get JSON body from the request
+        Set body = %request.Content.Read()
+        Set json = ##class(%DynamicObject).%FromJSON(body)
+        
+        // Extract parameters from request
+        Set messageHeaderId = json.messageHeaderId
+        Set bodyClass = json.bodyClass
+        Set bodyId = json.bodyId
+        Set format = json.format  // "json", "xml", "raw"
+        
+        // Set defaults
+        If (format = "") Set format = "json"
+        
+        // Check if Ensemble/Interoperability is available
+        Set ensembleAvailable = ##class(%Dictionary.ClassDefinition).%ExistsId("Ens.Director")
+        
+        If 'ensembleAvailable {
+            Set response = ##class(%DynamicObject).%New()
+            Set response.success = 0
+            Set response.api = "Api.MCPInterop"
+            Set response.error = "Ensemble/Interoperability not available in this namespace"
+            Set response.timestamp = $ZDATETIME($HOROLOG, 3)
+            Set response.step = "Message Body Download"
+            Write response.%ToJSON()
+            Return $$$OK
+        }
+        
+        // Get message header info if messageHeaderId provided
+        If (messageHeaderId '= "") {
+            Set statement = ##class(%SQL.Statement).%New()
+            Set tSC = statement.%Prepare("SELECT MessageBodyClassname, MessageBodyId, SourceConfigName, TargetConfigName, TimeCreated FROM Ens.MessageHeader WHERE ID = ?")
+            If $$$ISOK(tSC) {
+                Set resultSet = statement.%Execute(messageHeaderId)
+                If resultSet.%Next() {
+                    Set bodyClass = resultSet.%Get("MessageBodyClassname")
+                    Set bodyId = resultSet.%Get("MessageBodyId")
+                    Set sourceConfig = resultSet.%Get("SourceConfigName")
+                    Set targetConfig = resultSet.%Get("TargetConfigName")
+                    Set timeCreated = resultSet.%Get("TimeCreated")
+                }
+            }
+        }
+        
+        // Validate required parameters
+        If (bodyClass = "") || (bodyId = "") {
+            Set response = ##class(%DynamicObject).%New()
+            Set response.success = 0
+            Set response.api = "Api.MCPInterop"
+            Set response.error = "Both bodyClass and bodyId are required (or provide messageHeaderId)"
+            Set response.timestamp = $ZDATETIME($HOROLOG, 3)
+            Set response.step = "Message Body Download"
+            Write response.%ToJSON()
+            Return $$$OK
+        }
+        
+        // Get the message body object
+        Set result = ""
+        Set success = 1
+        Set error = ""
+        Set action = "downloaded"
+        Set messageContent = ""
+        Set contentType = ""
+        
+        Try {
+            Set bodyObj = $CLASSMETHOD(bodyClass, "%OpenId", bodyId)
+            If $IsObject(bodyObj) {
+                
+                If $Method(bodyObj, "%IsA", "Ens.StringRequest") || $Method(bodyObj, "%IsA", "Ens.StringResponse") {
+                    // For string requests/responses, get the string value
+                    Set messageContent = bodyObj.StringValue
+                    Set contentType = "text/plain"
+                    
+                } ElseIf $Method(bodyObj, "%IsA", "Ens.StreamContainer") {
+                    // For stream containers, read the stream content
+                    Set stream = bodyObj.Stream
+                    If $IsObject(stream) {
+                        Do stream.Rewind()
+                        Set messageContent = ""
+                        While 'stream.AtEnd {
+                            Set messageContent = messageContent _ stream.Read(32000)
+                        }
+                        Set contentType = "text/plain"
+                    } Else {
+                        Set messageContent = "Stream not available"
+                        Set contentType = "text/plain"
+                    }
+                    
+                } ElseIf (format = "xml") || (format = "json") {
+                    // For XML format (or JSON fallback), use XML export
+                    Try {
+                        Do bodyObj.%XMLExportToString(.messageContent)
+                        Set contentType = "application/xml"
+                    } Catch xmlEx {
+                        Set messageContent = "XML export failed: " _ xmlEx.DisplayString()
+                        Set contentType = "text/plain"
+                    }
+                    
+                } Else {
+                    // Raw format - provide basic object info
+                    Set messageContent = "Message body object of class: " _ bodyClass
+                    Set contentType = "text/plain"
+                }
+                
+                Set result = "Message body downloaded successfully"
+                Set action = "downloaded"
+                
+            } Else {
+                Set success = 0
+                Set error = "Could not open message body object with class: " _ bodyClass _ ", ID: " _ bodyId
+                Set action = "failed"
+            }
+            
+        } Catch ex {
+            Set success = 0
+            Set error = ex.DisplayString()
+            Set action = "failed"
+        }
+        
+        // Build response
+        Set response = ##class(%DynamicObject).%New()
+        Set response.success = success
+        Set response.api = "Api.MCPInterop"
+        Set response.step = "Message Body Download"
+        Set response.timestamp = $ZDATETIME($HOROLOG, 3)
+        Set response.namespace = $NAMESPACE
+        Set response.result = result
+        Set response.action = action
+        Set response.bodyClass = bodyClass
+        Set response.bodyId = bodyId
+        Set response.format = format
+        Set response.contentType = contentType
+        
+        If (messageContent '= "") {
+            Set response.messageContent = messageContent
+        }
+        
+        If $Data(sourceConfig) {
+            Set response.sourceConfig = sourceConfig
+            Set response.targetConfig = targetConfig
+            Set response.timeCreated = timeCreated
+        }
+        
+        If (error '= "") {
+            Set response.error = error
+        }
+        
+        Write response.%ToJSON()
+        
+    } Catch ex {
+        Set error = ##class(%DynamicObject).%New()
+        Set error.success = 0
+        Set error.api = "Api.MCPInterop"
+        Set error.error = ex.DisplayString()
+        Set error.timestamp = $ZDATETIME($HOROLOG, 3)
+        Set error.step = "Message Body Download"
         
         Write error.%ToJSON()
     }
